@@ -1,0 +1,33 @@
+---
+group:
+  - name: Haadi Khan 
+    netid: hmk68
+  - name: Jiming Chen 
+    netid: jc3579
+  - name: Domenic Fioravanti
+    netid: dmf252
+  - name: Will Bradley
+    netid: wjb247
+
+pm:
+  name: Evan Cui
+  netid: ec875
+
+publish: true
+
+title: "SideCaml"
+
+git-repo: "https://github.coecis.cornell.edu/hmk68/3110-final-project"
+
+demo-video-url: "TODO"
+
+desc: >
+  Our project is implementing a transformer architecture-based neural network 
+  trained on high-performing (i.e., highly-upvoted) posts on the popular 
+  social media app "Sidechat". The posts will be gathered specifically from 
+  Sidechat's Cornell community, which will ideally encourage our model to 
+  output Cornell-centric posts.
+
+  As a test of the model's abilities, our group will make a series of posts 
+  to the app using text solely generated from our model, in the hope that
+  the model can mimick a "Cornellian" and thus garner a positive following.
