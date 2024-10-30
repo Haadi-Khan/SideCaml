@@ -100,14 +100,62 @@ let rec fetch_posts cursor acc count total =
         fetch_posts (Some next_cursor) (acc @ posts) (count - 1) total
     | None -> Lwt.return acc
 
-(* Run the function and save results to JSON *)
-let () =
-  let total_requests = 5000 in
+let json_to_csv json =
+  let posts = json |> to_list in
+  let csv_header = "text,vote_total,comment_count,created_at\n" in
+  let csv_rows =
+    posts
+    |> List.map (fun post ->
+           let text = post |> member "text" |> to_string in
+           let vote_total = post |> member "vote_total" |> to_int in
+           let comment_count = post |> member "comment_count" |> to_int in
+           let created_at = post |> member "created_at" |> to_string in
+           Printf.sprintf "\"%s\",%d,%d,\"%s\"" text vote_total comment_count
+             created_at)
+  in
+  csv_header ^ String.concat "\n" csv_rows
+
+(* Fetch posts and save results to JSON *)
+let fetch_posts req_num =
   let result =
-    Lwt_main.run (fetch_posts None [] total_requests total_requests)
-    |> fun posts -> `List posts |> Yojson.Safe.pretty_to_string
+    Lwt_main.run (fetch_posts None [] req_num req_num) |> fun posts ->
+    `List posts |> Yojson.Safe.pretty_to_string
   in
   let oc = open_out "posts.json" in
   output_string oc result;
   close_out oc;
-  Printf.printf "\nDone! Results saved to posts.json\n"
+  let json = Yojson.Safe.from_string result in
+  let csv = json_to_csv json in
+  let oc = open_out "posts.csv" in
+  output_string oc csv;
+  close_out oc;
+  Printf.printf "\nResults saved to posts.csv\n"
+
+(* Write a function to randomly select a post from the data stored in
+   data/posts.json *)
+let select_random_post () =
+  let ic = open_in "data/posts.json" in
+  let json = Yojson.Safe.from_channel ic in
+  close_in ic;
+  let posts = json |> to_list in
+  let random_post = List.nth posts (Random.int (List.length posts)) in
+  let text = random_post |> member "text" |> to_string in
+  Printf.printf "Here's a random post: %s\n" text
+
+(* Run the function and save results to JSON *)
+let () =
+  Printf.printf
+    "This program fetches posts from Sidechat API and saves them to a JSON \
+     file and a CSV file.\n\
+     The main data set is in data/posts.csv Fetching is stored to a new file.\n\n\
+     Do you want to fetch new posts? (y/N): ";
+  match read_line () with
+  | "y" | "Y" ->
+      Printf.printf
+        "How many requests do you want to make? Each request yields ~20 posts. ";
+      let req_num = read_int () in
+      fetch_posts req_num;
+      select_random_post ()
+  | _ ->
+      Printf.printf "No new posts fetched.\n";
+      select_random_post ()
