@@ -19,7 +19,7 @@
  (name final_project)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends ocaml dune cohttp-lwt-unix yojson lwt_ssl)
  (tags
   (topics "to describe" your project)))
 
