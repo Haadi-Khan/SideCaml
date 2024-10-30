@@ -138,8 +138,10 @@ let select_random_post () =
   let json = Yojson.Safe.from_channel ic in
   close_in ic;
   let posts = json |> to_list in
+  Random.self_init ();
   let random_post = List.nth posts (Random.int (List.length posts)) in
   let text = random_post |> member "text" |> to_string in
+  print_endline (string_of_int (Random.int 10));
   Printf.printf "Here's a random post: %s\n" text
 
 (* Run the function and save results to JSON *)
