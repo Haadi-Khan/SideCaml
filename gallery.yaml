@@ -22,12 +22,11 @@ git-repo: "https://github.coecis.cornell.edu/hmk68/3110-final-project"
 demo-video-url: "https://youtu.be/auicAPfDaYM?si=XQq71ehoKj5qOgG6"
 
 desc: >
-  Our project is implementing a transformer architecture-based neural network 
-  trained on high-performing (i.e., highly-upvoted) posts on the popular 
-  social media app "Sidechat". The posts will be gathered specifically from 
-  Sidechat's Cornell community, which will ideally encourage our model to 
-  output Cornell-centric posts.
-
-  As a test of the model's abilities, our group will make a series of posts 
-  to the app using text solely generated from our model, in the hope that
-  the model can mimick a "Cornellian" and thus garner a positive following.
+  Our project is to implement a transformer architecture-based neural network 
+  trained on high-performing (i.e. highly-upvoted) posts on the popular social 
+  media app "Sidechat." The posts will be gathered specifically from Sidechat's 
+  Cornell community, which will encourage our model to output Cornell-centric 
+  posts. As a test of the model's abilities, our group will make a series of 
+  posts to the app using text solely generated from our model, in the hope that
+  the model can mimic an entertaining, human Cornell student and thus garner a
+  positive following.
