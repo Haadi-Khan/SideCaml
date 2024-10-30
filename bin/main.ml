@@ -133,8 +133,8 @@ let fetch_posts req_num =
 
 (* Randomly select a post from the data stored in
    data/posts.json *)
-let select_random_post () =
-  let ic = open_in "data/posts.json" in
+let select_random_post path () =
+  let ic = open_in path in
   let json = Yojson.Safe.from_channel ic in
   close_in ic;
   let posts = json |> to_list in
@@ -150,7 +150,7 @@ let () =
      file and a CSV file.\n\
      An example json file is already in data/posts.json.\n\
      The fetched post data are written to posts.csv and posts.json.\n\n\
-     Do you want to fetch new posts (y/Y) or use the existing data/posts.json? ";
+     Do you want to fetch new posts (y/N) or use the existing data/posts.json? ";
   match read_line () with
   | "y" | "Y" ->
       Printf.printf
@@ -159,7 +159,7 @@ let () =
       | None -> print_endline "Failed to parse input. Exiting"
       | Some req_num ->
         fetch_posts req_num;
-        select_random_post ())
+        select_random_post "posts.json" ())
   | _ ->
       Printf.printf "No new posts fetched (using data/posts.json).\n";
-      select_random_post ()
+      select_random_post "data/posts.json" ()
