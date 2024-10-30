@@ -131,7 +131,7 @@ let fetch_posts req_num =
   close_out oc;
   Printf.printf "\nResults saved to posts.csv\n"
 
-(* Write a function to randomly select a post from the data stored in
+(* Randomly select a post from the data stored in
    data/posts.json *)
 let select_random_post () =
   let ic = open_in "data/posts.json" in
@@ -141,7 +141,6 @@ let select_random_post () =
   Random.self_init ();
   let random_post = List.nth posts (Random.int (List.length posts)) in
   let text = random_post |> member "text" |> to_string in
-  print_endline (string_of_int (Random.int 10));
   Printf.printf "Here's a random post: %s\n" text
 
 (* Run the function and save results to JSON *)
@@ -149,15 +148,18 @@ let () =
   Printf.printf
     "This program fetches posts from Sidechat API and saves them to a JSON \
      file and a CSV file.\n\
-     The main data set is in data/posts.csv Fetching is stored to a new file.\n\n\
-     Do you want to fetch new posts? (y/N): ";
+     An example json file is already in data/posts.json.\n\
+     The fetched post data are written to posts.csv and posts.json.\n\n\
+     Do you want to fetch new posts (y/Y) or use the existing data/posts.json? ";
   match read_line () with
   | "y" | "Y" ->
       Printf.printf
         "How many requests do you want to make? Each request yields ~20 posts. ";
-      let req_num = read_int () in
-      fetch_posts req_num;
-      select_random_post ()
+      (match read_int_opt () with
+      | None -> print_endline "Failed to parse input. Exiting"
+      | Some req_num ->
+        fetch_posts req_num;
+        select_random_post ())
   | _ ->
-      Printf.printf "No new posts fetched.\n";
+      Printf.printf "No new posts fetched (using data/posts.json).\n";
       select_random_post ()
