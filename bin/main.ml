@@ -156,9 +156,47 @@ let () =
         "How many requests do you want to make? Each request yields ~20 posts. ";
       match read_int_opt () with
       | None -> print_endline "Failed to parse input. Exiting"
-      | Some req_num ->
+      | Some req_num -> (
           fetch_posts req_num;
-          select_random_post "posts.json" ())
-  | _ ->
+          Printf.printf
+            "\n\
+             Do you want to (1) see a random post or (2) tokenize a random \
+             post? ";
+          match read_int_opt () with
+          | Some 1 -> select_random_post "posts.json" ()
+          | Some 2 ->
+              let tokenizer = Tokenizer.load_and_train_tokenizer "posts.json" in
+              let text, tokens =
+                Tokenizer.tokenize_random_post tokenizer "posts.json"
+              in
+              Printf.printf "\nOriginal post:\n%s\n\n" text;
+              Printf.printf "Tokens:\n[";
+              List.iter (fun token -> Printf.printf "%d; " token) tokens;
+              Printf.printf "]\n\n";
+              let decoded = Tokenizer.decode tokenizer tokens in
+              Printf.printf "Decoded back to text:\n%s\n" decoded
+          | _ ->
+              Printf.printf "Invalid choice, showing random post:\n";
+              select_random_post "posts.json" ()))
+  | _ -> (
       Printf.printf "No new posts fetched (using data/posts.json).\n";
-      select_random_post "data/posts.json" ()
+      Printf.printf
+        "Do you want to (1) see a random post or (2) tokenize a random post? ";
+      match read_int_opt () with
+      | Some 1 -> select_random_post "data/posts.json" ()
+      | Some 2 ->
+          let tokenizer =
+            Tokenizer.load_and_train_tokenizer "data/posts.json"
+          in
+          let text, tokens =
+            Tokenizer.tokenize_random_post tokenizer "data/posts.json"
+          in
+          Printf.printf "\nOriginal post:\n%s\n\n" text;
+          Printf.printf "Tokens:\n[";
+          List.iter (fun token -> Printf.printf "%d; " token) tokens;
+          Printf.printf "]\n\n";
+          let decoded = Tokenizer.decode tokenizer tokens in
+          Printf.printf "Decoded back to text:\n%s\n" decoded
+      | _ ->
+          Printf.printf "Invalid choice, showing random post:\n";
+          select_random_post "data/posts.json" ())
