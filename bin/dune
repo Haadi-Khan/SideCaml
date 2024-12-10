@@ -1,4 +1,4 @@
 (executable
  (public_name final_project)
  (name main)
- (libraries final_project yojson cohttp-lwt-unix))
+ (libraries final_project yojson cohttp-lwt-unix core))

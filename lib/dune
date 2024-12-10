@@ -1,2 +1,4 @@
 (library
- (name final_project))
+ (name final_project)
+ (libraries core yojson)
+ (preprocess (pps ppx_jane)))

@@ -2,6 +2,8 @@ open Lwt.Infix
 open Cohttp
 open Cohttp_lwt_unix
 open Yojson.Safe.Util
+open Final_project.Transformer
+open Tokenizer
 
 let url = Uri.of_string "https://api.sidechat.lol/v1/posts/home"
 
@@ -285,7 +287,7 @@ let () =
           Printf.printf
             "\n\
              Do you want to (1) see a random post, (2) tokenize a random post, \
-             or (3) generate a post? ";
+             (3) generate a post, or (4) generate using transformer? ";
           match read_int_opt () with
           | Some 1 -> select_random_post "posts.json" ()
           | Some 2 ->
@@ -302,14 +304,17 @@ let () =
           | Some 3 ->
               let generated = generate_post_probabilistically "posts.json" in
               Printf.printf "\nGenerated post:\n%s\n" generated
+          | Some 4 ->
+              let sample = generate_sample () in
+              Printf.printf "\nTransformer generated post:\n%s\n" sample
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
   | _ -> (
       Printf.printf "No new posts fetched (using data/posts.json).\n";
       Printf.printf
-        "Do you want to (1) see a random post, (2) tokenize a random post, or \
-         (3) generate a post? ";
+        "Do you want to (1) see a random post, (2) tokenize a random post, (3) \
+         generate a post, or (4) generate using transformer? ";
       match read_int_opt () with
       | Some 1 -> select_random_post "data/posts.json" ()
       | Some 2 ->
@@ -328,6 +333,9 @@ let () =
       | Some 3 ->
           let generated = generate_post_probabilistically "data/posts.json" in
           Printf.printf "\nGenerated post:\n%s\n" generated
+      | Some 4 ->
+          let sample = generate_sample () in
+          Printf.printf "\nTransformer generated post:\n%s\n" sample
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())
