@@ -224,15 +224,7 @@ let generate_post_probabilistically path =
       (count = 0 && List.length acc >= 5)
       || (word = "<END>" && List.length acc >= 5)
     then List.rev acc
-    else (
-      Printf.printf "\nCurrent word: %s\n" word;
-      Printf.printf "Possible next words with frequencies (high to low):\n";
-      (match List.assoc_opt word word_to_top_next_words with
-      | Some next_words ->
-          List.iter
-            (fun (next_word, freq) -> Printf.printf "  %s: %d\n" next_word freq)
-            next_words
-      | None -> Printf.printf "  No next words found\n");
+    else
       let next_word =
         match List.assoc_opt word word_to_top_next_words with
         | Some next_words ->
@@ -256,12 +248,10 @@ let generate_post_probabilistically path =
                   else pick_word tl (acc + count)
               | [] -> "<END>"
             in
-            let chosen = pick_word next_words 0 in
-            Printf.printf "Chosen word: %s\n" chosen;
-            chosen
+            pick_word next_words 0
         | None -> "<END>"
       in
-      generate_words next_word (word :: acc) (count - 1))
+      generate_words next_word (word :: acc) (count - 1)
   in
   let start_word = get_random_first_word path in
   let post_words = generate_words start_word [] 20 in
