@@ -141,6 +141,130 @@ let select_random_post path () =
   let text = random_post |> member "text" |> to_string in
   Printf.printf "Here's a random post: %s\n" text
 
+(* Function to map each word to the 10 most common next words along with the
+   number of occurrences *)
+(* Function to map each word to the 10 most common next words along with the
+   number of occurrences, weighted by upvotes *)
+let map_word_to_next_words path =
+  let ic = open_in path in
+  let json = Yojson.Safe.from_channel ic in
+  close_in ic;
+  let posts = json |> to_list in
+  let word_map = Hashtbl.create 1000 in
+  let update_word_map word next_word vote_total =
+    let next_words =
+      match Hashtbl.find_opt word_map word with
+      | Some nw -> nw
+      | None -> Hashtbl.create 10
+    in
+    let weight = max 1 vote_total in
+    (* Use vote_total as weight, minimum 1 *)
+    let count =
+      match Hashtbl.find_opt next_words next_word with
+      | Some c -> c + weight
+      | None -> weight
+    in
+    Hashtbl.replace next_words next_word count;
+    Hashtbl.replace word_map word next_words
+  in
+  List.iter
+    (fun post ->
+      let text = post |> member "text" |> to_string in
+      let vote_total = post |> member "vote_total" |> to_int in
+      let words = String.split_on_char ' ' text in
+      List.iter2
+        (fun word next_word -> update_word_map word next_word vote_total)
+        words
+        (List.tl words @ [ "<END>" ]))
+    posts;
+  let word_to_top_next_words =
+    Hashtbl.fold
+      (fun word next_words acc ->
+        let sorted_next_words =
+          Hashtbl.fold
+            (fun next_word count acc -> (next_word, count) :: acc)
+            next_words []
+          |> List.sort (fun (_, c1) (_, c2) -> compare c2 c1)
+          |> fun lst ->
+          List.fold_left
+            (fun (acc, n) x -> if n < 10 then (x :: acc, n + 1) else (acc, n))
+            ([], 0) lst
+          |> fst
+        in
+        (word, sorted_next_words) :: acc)
+      word_map []
+  in
+  word_to_top_next_words
+
+let get_random_first_word path =
+  let ic = open_in path in
+  let json = Yojson.Safe.from_channel ic in
+  close_in ic;
+  let posts = json |> to_list in
+  let first_words =
+    List.filter_map
+      (fun post ->
+        let text = post |> member "text" |> to_string in
+        match String.split_on_char ' ' text with
+        | first :: _ -> Some first
+        | [] -> None)
+      posts
+  in
+  match first_words with
+  | [] -> failwith "No posts found"
+  | words -> List.nth words (Random.int (List.length words))
+
+(** Generate a new post using [map_word_to_next_words]. *)
+let generate_post_probabilistically path =
+  let word_to_top_next_words = map_word_to_next_words path in
+  let rec generate_words word acc count =
+    if
+      (count = 0 && List.length acc >= 5)
+      || (word = "<END>" && List.length acc >= 5)
+    then List.rev acc
+    else (
+      Printf.printf "\nCurrent word: %s\n" word;
+      Printf.printf "Possible next words with frequencies (high to low):\n";
+      (match List.assoc_opt word word_to_top_next_words with
+      | Some next_words ->
+          List.iter
+            (fun (next_word, freq) -> Printf.printf "  %s: %d\n" next_word freq)
+            next_words
+      | None -> Printf.printf "  No next words found\n");
+      let next_word =
+        match List.assoc_opt word word_to_top_next_words with
+        | Some next_words ->
+            let filtered_words =
+              if List.length acc < 5 then
+                List.filter (fun (w, _) -> w <> "<END>") next_words
+              else next_words
+            in
+            let next_words =
+              if List.length filtered_words = 0 then next_words
+              else filtered_words
+            in
+            let total =
+              List.fold_left (fun acc (_, count) -> acc + count) 0 next_words
+            in
+            let rand = Random.int total in
+            let rec pick_word lst acc =
+              match lst with
+              | (next_word, count) :: tl ->
+                  if rand < acc + count then next_word
+                  else pick_word tl (acc + count)
+              | [] -> "<END>"
+            in
+            let chosen = pick_word next_words 0 in
+            Printf.printf "Chosen word: %s\n" chosen;
+            chosen
+        | None -> "<END>"
+      in
+      generate_words next_word (word :: acc) (count - 1))
+  in
+  let start_word = get_random_first_word path in
+  let post_words = generate_words start_word [] 20 in
+  String.concat " " post_words
+
 (* Run the function and save results to JSON *)
 let () =
   Random.self_init ();
@@ -160,8 +284,8 @@ let () =
           fetch_posts req_num;
           Printf.printf
             "\n\
-             Do you want to (1) see a random post or (2) tokenize a random \
-             post? ";
+             Do you want to (1) see a random post, (2) tokenize a random post, \
+             or (3) generate a post? ";
           match read_int_opt () with
           | Some 1 -> select_random_post "posts.json" ()
           | Some 2 ->
@@ -175,13 +299,17 @@ let () =
               Printf.printf "]\n\n";
               let decoded = Tokenizer.decode tokenizer tokens in
               Printf.printf "Decoded back to text:\n%s\n" decoded
+          | Some 3 ->
+              let generated = generate_post_probabilistically "posts.json" in
+              Printf.printf "\nGenerated post:\n%s\n" generated
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
   | _ -> (
       Printf.printf "No new posts fetched (using data/posts.json).\n";
       Printf.printf
-        "Do you want to (1) see a random post or (2) tokenize a random post? ";
+        "Do you want to (1) see a random post, (2) tokenize a random post, or \
+         (3) generate a post? ";
       match read_int_opt () with
       | Some 1 -> select_random_post "data/posts.json" ()
       | Some 2 ->
@@ -197,6 +325,9 @@ let () =
           Printf.printf "]\n\n";
           let decoded = Tokenizer.decode tokenizer tokens in
           Printf.printf "Decoded back to text:\n%s\n" decoded
+      | Some 3 ->
+          let generated = generate_post_probabilistically "data/posts.json" in
+          Printf.printf "\nGenerated post:\n%s\n" generated
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())
