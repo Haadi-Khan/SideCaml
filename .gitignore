@@ -3,3 +3,4 @@ _opam/
 /posts.csv
 /posts.json
 data/wiki.train.tokens
+_coverage/

@@ -1,25 +1,44 @@
-(* open OUnit2
+open OUnit2
 open Final_project.Transformer
+open Final_project.Matrix
 
-let test_hello _ = assert_equal 2 (1 + 1)
+let m1 = of_array [| [| 1.; 2. |]; [| 3.; 4. |] |]
+let m2 = of_array [| [| 5.; 6. |]; [| 7.; 8. |] |]
 
-let test_matrix_dot _ =
-  let m1 = [| [| 1.; 2. |]; [| 3.; 4. |] |] in
-  let m2 = [| [| 5.; 6. |]; [| 7.; 8. |] |] in
-  let expected = [| [| 19.; 22. |]; [| 43.; 50. |] |] in
-  assert_equal expected (Matrix.dot m1 m2)
+let print m =
+  m 
+  |> to_array 
+  |> Array.map Array.to_list 
+  |> Array.to_list 
+  |> List.map (fun row -> "\n" ^ String.concat ", " @@ List.map Float.to_string row)
+  |> String.concat ""
 
-let test_matrix_dot_single _ =
-  let m1 = [| [| 2. |] |] in
-  let m2 = [| [| 3. |] |] in
-  let expected = [| [| 6. |] |] in
-  assert_equal expected (Matrix.dot m1 m2)
+let eq_test expected_arr x =
+  fun _ -> assert_equal (of_array expected_arr) x ~printer:print
+
+let test_matrix_dot =
+  eq_test [| [| 19.; 22. |]; [| 43.; 50. |] |] (dot m1 m2)
+
+let test_matrix_dot_single =
+  let m1 = of_array [| [| 2. |] |] in
+  let m2 = of_array [| [| 3. |] |] in
+  eq_test [| [| 6. |] |] (dot m1 m2)
+
+let test_matrix_dot_fail _ =
+  assert_raises 
+    (Invalid_argument "Incompatible dimensions: 1 != 2") 
+    (fun () -> dot (of_array [|[|0.0|]|]) m1)
+
+let test_matrix_transpose =
+  eq_test [| [| 1.; 3. |]; [| 2.; 4.; |] |] (transpose m1)
+
 
 let () =
   run_test_tt_main
     ("test suite"
     >::: [
-           "test_hello" >:: test_hello;
            "test_matrix_dot" >:: test_matrix_dot;
            "test_matrix_dot_single" >:: test_matrix_dot_single;
-         ]) *)
+           "test_matrix_transpose" >:: test_matrix_transpose;
+           "test_matrix_dot_fail" >:: test_matrix_dot_fail
+         ])
