@@ -66,3 +66,7 @@ val clean_text : string -> string
 val position_encoding : int -> int -> Matrix.t
 (** [position_encoding max_length embedding_dim] computes the position encoding
     matrix. *)
+
+val update_weights : t -> float -> Matrix.t -> t
+(** [update_weights params learning_rate gradients] updates the model parameters
+    using gradient descent. *)

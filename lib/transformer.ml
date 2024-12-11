@@ -6,12 +6,35 @@ open Feedforward
 open Tokenizer
 
 type t = {
+  (* Configuration *)
   vocab_size : int;
   embedding_dim : int;
   num_heads : int;
   num_layers : int;
   dropout : float;
+  (* Weights *)
+  wk : Matrix.t; (* Key weights *)
+  wq : Matrix.t; (* Query weights *)
+  wv : Matrix.t; (* Value weights *)
+  wo : Matrix.t; (* Output weights *)
+  w1 : Matrix.t; (* First feedforward layer *)
+  w2 : Matrix.t; (* Second feedforward layer *)
 }
+
+let update_weights (model : t) (learning_rate : float) (gradients : Matrix.t) :
+    t =
+  let update_matrix m g =
+    Matrix.map2 (fun w gradient -> w -. (learning_rate *. gradient)) m g
+  in
+  {
+    model with
+    wk = update_matrix model.wk gradients;
+    wq = update_matrix model.wq gradients;
+    wv = update_matrix model.wv gradients;
+    wo = update_matrix model.wo gradients;
+    w1 = update_matrix model.w1 gradients;
+    w2 = update_matrix model.w2 gradients;
+  }
 
 type post = {
   text : string;
@@ -130,14 +153,21 @@ let is_repetitive tokens window_size =
     Array.equal Int.equal window1 window2
 
 let forward_pass config tokens =
+  Printf.printf "Preparing input embeddings...\n%!";
   let input_embeddings = prepare_input tokens in
+
+  Printf.printf "Running transformer block...\n%!";
   let transformer_output = transformer_block config input_embeddings in
+
+  Printf.printf "Computing logits...\n%!";
   let logits =
     dot transformer_output
       (Array.init config.embedding_dim ~f:(fun _ ->
            Array.init config.vocab_size ~f:(fun _ -> Random.float 2. -. 1.))
       |> Matrix.of_array)
   in
+
+  Printf.printf "Getting final logits...\n%!";
   let logits_array = Matrix.to_array logits in
   logits_array.(Array.length logits_array - 1)
 
@@ -155,13 +185,20 @@ let generate_text config () start_token length =
   decode tokens
 
 let init_transformer () =
+  let embedding_dim = 512 in
   let config =
     {
       vocab_size = 10000;
-      embedding_dim = 512;
+      embedding_dim;
       num_heads = 8;
       num_layers = 6;
       dropout = 0.1;
+      wk = Matrix.random embedding_dim embedding_dim;
+      wq = Matrix.random embedding_dim embedding_dim;
+      wv = Matrix.random embedding_dim embedding_dim;
+      wo = Matrix.random embedding_dim embedding_dim;
+      w1 = Matrix.random embedding_dim (4 * embedding_dim);
+      w2 = Matrix.random (4 * embedding_dim) embedding_dim;
     }
   in
   let posts = load_posts "data/posts.json" in

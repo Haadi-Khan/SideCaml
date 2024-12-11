@@ -50,6 +50,27 @@ let concat matrices =
       Array.init rows ~f:(fun i ->
           Array.concat (List.map matrices ~f:(fun m -> m.(i))))
 
+let map f matrix = Array.map ~f:(Array.map ~f) matrix
 let to_array a = a
-
 let of_array a = a
+
+let one_hot index size =
+  let arr = Array.create ~len:size 0. in
+  arr.(index) <- 1.;
+  [| arr |]
+
+let get_row matrix i = matrix.(i)
+
+let sum matrix =
+  Array.fold matrix ~init:0. ~f:(fun acc row ->
+      Array.fold row ~init:0. ~f:( +. ) +. acc)
+
+let map2 f m1 m2 = Array.map2_exn ~f:(Array.map2_exn ~f) m1 m2
+let elementwise_mul m1 m2 = map2 ( *. ) m1 m2
+let ones (rows, cols) = Array.make_matrix ~dimx:rows ~dimy:cols 1.0
+
+let random rows cols =
+  Array.init rows ~f:(fun _ ->
+      Array.init cols ~f:(fun _ -> Random.float 2. -. 1.))
+
+let get a i j = a.(i).(j)

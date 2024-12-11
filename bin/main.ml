@@ -4,6 +4,7 @@ open Cohttp_lwt_unix
 open Yojson.Safe.Util
 open Final_project.Transformer
 open Tokenizer
+open Final_project.Pretrain
 
 let url = Uri.of_string "https://api.sidechat.lol/v1/posts/home"
 
@@ -277,7 +278,8 @@ let () =
           Printf.printf
             "\n\
              Do you want to (1) see a random post, (2) tokenize a random post, \
-             (3) generate a post, or (4) generate using transformer? ";
+             (3) generate a post, (4) generate using transformer, or (5) \
+             pretrain the model? ";
           match read_int_opt () with
           | Some 1 -> select_random_post "posts.json" ()
           | Some 2 ->
@@ -297,6 +299,19 @@ let () =
           | Some 4 ->
               let sample = generate_sample () in
               Printf.printf "\nTransformer generated post:\n%s\n" sample
+          | Some 5 ->
+              let config = init_transformer () in
+              let training_config =
+                {
+                  batch_size = 32;
+                  learning_rate = 0.0001;
+                  max_epochs = 100;
+                  checkpoint_dir = "checkpoints";
+                }
+              in
+              let dataset = load_dataset "data/wiki.train.tokens" in
+              print_endline "Done reading dataset";
+              train config training_config dataset
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
@@ -304,7 +319,8 @@ let () =
       Printf.printf "No new posts fetched (using data/posts.json).\n";
       Printf.printf
         "Do you want to (1) see a random post, (2) tokenize a random post, (3) \
-         generate a post, or (4) generate using transformer? ";
+         generate a post, (4) generate using transformer, or (5) pretrain the \
+         model? ";
       match read_int_opt () with
       | Some 1 -> select_random_post "data/posts.json" ()
       | Some 2 ->
@@ -326,6 +342,19 @@ let () =
       | Some 4 ->
           let sample = generate_sample () in
           Printf.printf "\nTransformer generated post:\n%s\n" sample
+      | Some 5 ->
+          let config = init_transformer () in
+          let training_config =
+            {
+              batch_size = 32;
+              learning_rate = 0.0001;
+              max_epochs = 100;
+              checkpoint_dir = "checkpoints";
+            }
+          in
+          let dataset = load_dataset "data/wiki.train.tokens" in
+          print_endline "Done reading dataset";
+          train config training_config dataset
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())
