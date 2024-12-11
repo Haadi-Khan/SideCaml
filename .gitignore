@@ -4,3 +4,4 @@ _opam/
 /posts.json
 data/wiki.train.tokens
 _coverage/
+data/wikitext/*

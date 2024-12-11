@@ -365,7 +365,7 @@ let () =
               checkpoint_dir = "checkpoints";
             }
           in
-          let dataset = load_dataset "data/wiki.train.tokens" in
+          let dataset = load_dataset "data/wikitext/wikitext-103/wiki.train.tokens" in
           print_endline "Done reading dataset";
           train config training_config dataset
       | _ ->
