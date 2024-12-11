@@ -51,5 +51,4 @@ let concat matrices =
           Array.concat (List.map matrices ~f:(fun m -> m.(i))))
 
 let to_array a = a
-
 let of_array a = a

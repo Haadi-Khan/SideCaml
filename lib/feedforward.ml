@@ -10,7 +10,5 @@ let apply input w1 w2 =
   Matrix.dot (Matrix.of_array activated) w2
 
 let of_array = Matrix.of_array
-
 let to_array = Matrix.to_array
-
 let of_matrix x = x

@@ -18,5 +18,4 @@ let apply layer =
           /. Float.sqrt (Array.fold variance ~init:0. ~f:( +. ) +. 1e-6)))
 
 let of_matrix matrix = Matrix.to_array matrix
-
 let to_matrix layer = Matrix.of_array layer
