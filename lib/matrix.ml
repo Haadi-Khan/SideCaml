@@ -53,6 +53,7 @@ let concat matrices =
 let map f matrix = Array.map ~f:(Array.map ~f) matrix
 let to_array a = a
 let of_array a = a
+<<<<<<< HEAD
 
 let one_hot index size =
   let arr = Array.create ~len:size 0. in
@@ -74,3 +75,5 @@ let random rows cols =
       Array.init cols ~f:(fun _ -> Random.float 2. -. 1.))
 
 let get a i j = a.(i).(j)
+=======
+>>>>>>> refs/remotes/origin/master

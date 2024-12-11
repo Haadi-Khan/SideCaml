@@ -11,7 +11,8 @@ val moderate_text : ?max_length:int -> string -> t
 (** [moderate_text ?max_length text] performs all moderation checks on the text *)
 
 val get_failure_reason : t -> string
-(** [get_failure_reason result] returns the reason for moderation failure, or "Unknown reason" if none provided *)
+(** [get_failure_reason result] returns the reason for moderation failure, or
+    "Unknown reason" if none provided *)
 
 val is_valid : t -> bool
 (** [is_valid result] returns true if the moderation result is valid *)
