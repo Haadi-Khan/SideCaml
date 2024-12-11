@@ -161,6 +161,7 @@ let forward_pass config tokens =
            Array.init config.vocab_size ~f:(fun _ -> Random.float 2. -. 1.))
       |> Matrix.of_array)
   in
+
   let logits_array = Matrix.to_array logits in
   logits_array.(Array.length logits_array - 1)
 

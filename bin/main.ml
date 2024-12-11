@@ -298,11 +298,14 @@ let () =
               let generated = generate_post_probabilistically "posts.json" in
               Printf.printf "\nGenerated post:\n%s\n" generated
           | Some 4 -> (
-              let sample = generate_sample () in
-              match sample with
-              | Ok text ->
-                  Printf.printf "\nTransformer generated post:\n%s\n" text
-              | Error _ -> Printf.printf "\nFailed to generate post\n")
+              init () |> function
+              | Error _ -> Printf.printf "Failed to initialize transformer\n"
+              | Ok () -> (
+                  let sample = generate_sample () in
+                  match sample with
+                  | Ok text ->
+                      Printf.printf "\nTransformer generated post:\n%s\n" text
+                  | Error _ -> Printf.printf "\nFailed to generate post\n"))
           | Some 5 ->
               let config = init_transformer () in
               let training_config =
@@ -344,10 +347,14 @@ let () =
           let generated = generate_post_probabilistically "data/posts.json" in
           Printf.printf "\nGenerated post:\n%s\n" generated
       | Some 4 -> (
-          let sample = generate_sample () in
-          match sample with
-          | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
-          | Error _ -> Printf.printf "\nFailed to generate post\n")
+          init () |> function
+          | Error _ -> Printf.printf "Failed to initialize transformer\n"
+          | Ok () -> (
+              let sample = generate_sample () in
+              match sample with
+              | Ok text ->
+                  Printf.printf "\nTransformer generated post:\n%s\n" text
+              | Error _ -> Printf.printf "\nFailed to generate post\n"))
       | Some 5 ->
           let config = init_transformer () in
           let training_config =
