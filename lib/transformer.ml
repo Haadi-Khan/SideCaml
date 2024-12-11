@@ -185,10 +185,6 @@ let get_random_first_word path =
   | [] -> failwith "No posts found"
   | words -> List.nth_exn words (Random.int (List.length words))
 
-let generate_sample () =
-  let config = init_transformer () in
-  generate_text config () (get_random_first_word "data/posts.json") 10
-
 let clean_text text =
   text |> String.lowercase
   |> String.filter ~f:(fun c ->

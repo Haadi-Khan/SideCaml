@@ -294,9 +294,12 @@ let () =
           | Some 3 ->
               let generated = generate_post_probabilistically "posts.json" in
               Printf.printf "\nGenerated post:\n%s\n" generated
-          | Some 4 ->
-              let sample = generate_sample () in
-              Printf.printf "\nTransformer generated post:\n%s\n" sample
+          | Some 4 -> (
+              let sample = Final_project.Model.generate_sample () in
+              match sample with
+              | Ok text ->
+                  Printf.printf "\nTransformer generated post:\n%s\n" text
+              | Error _ -> Printf.printf "\nFailed to generate post\n")
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
@@ -323,9 +326,11 @@ let () =
       | Some 3 ->
           let generated = generate_post_probabilistically "data/posts.json" in
           Printf.printf "\nGenerated post:\n%s\n" generated
-      | Some 4 ->
-          let sample = generate_sample () in
-          Printf.printf "\nTransformer generated post:\n%s\n" sample
+      | Some 4 -> (
+          let sample = Final_project.Model.generate_sample () in
+          match sample with
+          | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
+          | Error _ -> Printf.printf "\nFailed to generate post\n")
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())

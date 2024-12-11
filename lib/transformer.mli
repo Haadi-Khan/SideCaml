@@ -54,9 +54,6 @@ val init_transformer : unit -> t
 val get_random_first_word : string -> string
 (** [get_random_first_word text] gets a random word from the text. *)
 
-val generate_sample : unit -> string
-(** [generate_sample ()] generates a sample post. *)
-
 val clean_text : string -> string
 (** [clean_text text] cleans the text by removing special characters. *)
 
