@@ -162,7 +162,6 @@ let forward_pass config tokens =
       |> Matrix.of_array)
   in
 
-  Printf.printf "Getting final logits...\n%!";
   let logits_array = Matrix.to_array logits in
   logits_array.(Array.length logits_array - 1)
 
