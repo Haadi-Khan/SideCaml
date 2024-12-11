@@ -110,7 +110,14 @@ let train config training_config dataset =
           (Array.length batch);
         Out_channel.flush stdout;
         let logits =
-          List.map ~f:(forward_pass !model_params) (Array.to_list batch)
+          let batch_size = Array.length batch in
+          List.mapi
+            ~f:(fun i input ->
+              Printf.printf "Forward pass %d/%d for input of size %d\n" (i + 1)
+                batch_size (Array.length input);
+              Out_channel.flush stdout;
+              forward_pass !model_params input)
+            (Array.to_list batch)
         in
         Printf.printf "Forward pass complete - Output logits size: %d\n"
           (List.length logits);
