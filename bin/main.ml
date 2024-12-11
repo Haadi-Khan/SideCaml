@@ -5,6 +5,7 @@ open Yojson.Safe.Util
 open Final_project.Transformer
 open Tokenizer
 open Final_project.Pretrain
+open Final_project.Model
 
 let url = Uri.of_string "https://api.sidechat.lol/v1/posts/home"
 
@@ -296,10 +297,12 @@ let () =
           | Some 3 ->
               let generated = generate_post_probabilistically "posts.json" in
               Printf.printf "\nGenerated post:\n%s\n" generated
-<<<<<<< HEAD
-          | Some 4 ->
+          | Some 4 -> (
               let sample = generate_sample () in
-              Printf.printf "\nTransformer generated post:\n%s\n" sample
+              match sample with
+              | Ok text ->
+                  Printf.printf "\nTransformer generated post:\n%s\n" text
+              | Error _ -> Printf.printf "\nFailed to generate post\n")
           | Some 5 ->
               let config = init_transformer () in
               let training_config =
@@ -313,14 +316,6 @@ let () =
               let dataset = load_dataset "data/wiki.train.tokens" in
               print_endline "Done reading dataset";
               train config training_config dataset
-=======
-          | Some 4 -> (
-              let sample = Final_project.Model.generate_sample () in
-              match sample with
-              | Ok text ->
-                  Printf.printf "\nTransformer generated post:\n%s\n" text
-              | Error _ -> Printf.printf "\nFailed to generate post\n")
->>>>>>> refs/remotes/origin/master
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
@@ -348,10 +343,11 @@ let () =
       | Some 3 ->
           let generated = generate_post_probabilistically "data/posts.json" in
           Printf.printf "\nGenerated post:\n%s\n" generated
-<<<<<<< HEAD
-      | Some 4 ->
+      | Some 4 -> (
           let sample = generate_sample () in
-          Printf.printf "\nTransformer generated post:\n%s\n" sample
+          match sample with
+          | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
+          | Error _ -> Printf.printf "\nFailed to generate post\n")
       | Some 5 ->
           let config = init_transformer () in
           let training_config =
@@ -365,13 +361,6 @@ let () =
           let dataset = load_dataset "data/wiki.train.tokens" in
           print_endline "Done reading dataset";
           train config training_config dataset
-=======
-      | Some 4 -> (
-          let sample = Final_project.Model.generate_sample () in
-          match sample with
-          | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
-          | Error _ -> Printf.printf "\nFailed to generate post\n")
->>>>>>> refs/remotes/origin/master
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())

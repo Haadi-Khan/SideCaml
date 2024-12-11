@@ -153,13 +153,8 @@ let is_repetitive tokens window_size =
     Array.equal Int.equal window1 window2
 
 let forward_pass config tokens =
-  Printf.printf "Preparing input embeddings...\n%!";
   let input_embeddings = prepare_input tokens in
-
-  Printf.printf "Running transformer block...\n%!";
   let transformer_output = transformer_block config input_embeddings in
-
-  Printf.printf "Computing logits...\n%!";
   let logits =
     dot transformer_output
       (Array.init config.embedding_dim ~f:(fun _ ->

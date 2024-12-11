@@ -37,7 +37,6 @@ val to_array : t -> float array array
 
 val of_array : float array array -> t
 (** [of_array a] creates a matrix from a 2D array [a]. *)
-<<<<<<< HEAD
 
 val one_hot : int -> int -> t
 (** [one_hot index size] creates a one-hot vector of size [size] with a 1 at the
@@ -67,5 +66,3 @@ val random : int -> int -> t
     random values between -1 and 1. *)
 
 val get : t -> int -> int -> float
-=======
->>>>>>> refs/remotes/origin/master
