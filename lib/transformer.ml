@@ -105,11 +105,9 @@ let transformer_block config input =
    |> Layernorm.of_matrix)
   |> Layernorm.to_matrix
 
-let prepare_input tokens =
-  let embedding_dim = 512 in
-  Array.map tokens ~f:(fun _token ->
-      Array.init embedding_dim ~f:(fun _ -> Random.float 2. -. 1.))
-  |> Matrix.of_array
+(* let prepare_input tokens = Matrix.random (Array.length tokens) let
+   embedding_dim = 512 in Array.map tokens ~f:(fun _ -> Array.init embedding_dim
+   ~f:(fun _ -> Random.float 2. -. 1.)) |> Matrix.of_array *)
 
 let sample_from_distribution probs =
   let cumsum =
@@ -153,17 +151,20 @@ let is_repetitive tokens window_size =
     Array.equal Int.equal window1 window2
 
 let forward_pass config tokens =
-  let input_embeddings = prepare_input tokens in
+  let input_embeddings =
+    Matrix.random (Array.length tokens) config.embedding_dim
+  in
   let transformer_output = transformer_block config input_embeddings in
   let logits =
     dot transformer_output
-      (Array.init config.embedding_dim ~f:(fun _ ->
-           Array.init config.vocab_size ~f:(fun _ -> Random.float 2. -. 1.))
-      |> Matrix.of_array)
+      (Matrix.random config.embedding_dim config.vocab_size)
   in
 
-  let logits_array = Matrix.to_array logits in
-  logits_array.(Array.length logits_array - 1)
+  (* TODO: what is the point of doing the full matrix multiplication when we
+     only need the last row? *)
+  let logits_rows, _ = Matrix.size logits in
+  (* TODO: compute this ahead of time *)
+  Matrix.get_row logits (logits_rows - 1)
 
 let generate_text config () start_token length =
   let temperature = 0.7 in

@@ -2,11 +2,12 @@ type t
 (** Type alias for a 2D matrix of floats. *)
 
 val dot : t -> t -> t
-(** [dot a b] computes the dot product of matrices [a] and [b]. Raises
-    [Invalid_argument] if the dimensions are incompatible. *)
+(** [dot a b] computes the inner product of matrices [a] and [b]. It is up to
+    the caller to make sure that [snd (size a) = fst (size b)]. *)
 
 val transpose : t -> t
-(** [transpose a] computes the transpose of the matrix [a]. *)
+(** [transpose a] computes the transpose of the matrix [a]. This is an expensive
+    operation and should be avoided if possible. *)
 
 val scale : t -> float -> t
 (** [scale a s] scales all elements of the matrix [a] by the scalar [s]. *)

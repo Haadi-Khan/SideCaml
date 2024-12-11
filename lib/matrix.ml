@@ -1,78 +1,50 @@
 open Core
 open Yojson.Basic.Util
+open Lacaml.D
 
-type t = float array array
+type t = Mat.t
 
-let dot a b =
-  let rows_a = Array.length a in
-  let cols_a = Array.length a.(0) in
-  let rows_b = Array.length b in
-  let cols_b = Array.length b.(0) in
-  if cols_a <> rows_b then
-    invalid_arg
-      (Printf.sprintf "Incompatible dimensions: %d != %d" cols_a rows_b)
-    [@coverage off];
-  Array.init rows_a ~f:(fun i ->
-      Array.init cols_b ~f:(fun j ->
-          Array.fold ~init:0.
-            ~f:(fun acc k -> acc +. (a.(i).(k) *. b.(k).(j)))
-            (Array.init cols_a ~f:(fun x -> x))))
-
-let transpose a =
-  let rows = Array.length a in
-  let cols = Array.length a.(0) in
-  Array.init cols ~f:(fun i -> Array.init rows ~f:(fun j -> a.(j).(i)))
-
-let scale a s = Array.map a ~f:(fun row -> Array.map row ~f:(fun x -> x *. s))
+let dot a b = gemm a b [@@inline]
+let transpose a = Mat.transpose_copy a
+let scale a s = Mat.map (( *. ) s) a
 
 let softmax a =
-  Array.map a ~f:(fun row ->
-      let max_val =
-        Array.fold row ~init:Float.neg_infinity ~f:(fun acc x ->
-            Float.max acc x)
-      in
-      let exp_vals = Array.map row ~f:(fun x -> Float.exp (x -. max_val)) in
-      let sum = Array.fold exp_vals ~init:0. ~f:( +. ) in
-      Array.map exp_vals ~f:(fun x -> x /. sum))
+  let rows = Mat.dim1 a in
+  let cols = Mat.dim2 a in
+  let expd = Mat.exp a in
+  let exp_sums = Mat.fold_cols (fun x y -> Vec.add x y) (Vec.make0 rows) expd in
+  Mat.div expd (Mat.of_col_vecs (Array.create ~len:cols exp_sums))
 
 let reshape a rows cols =
-  let flattened = Array.concat_map a ~f:Array.copy in
-  Array.init rows ~f:(fun i ->
-      Array.init cols ~f:(fun j -> flattened.((i * cols) + j)))
+  let arr = Mat.to_array a in
+  let old_cols = Mat.dim2 a in
+  Mat.init_cols rows cols (fun row col ->
+      let i = ((row - 1) * cols) + col - 1 in
+      (* Printf.printf "row = %d, col = %d, i = %d, %d, %d\n" row col i (i /
+         old_cols) (i mod old_cols); *)
+      arr.(i / old_cols).(i mod old_cols))
 
 let concat matrices =
-  match matrices with
-  | [] -> [| [||] |]
-  | hd :: _ ->
-      let rows = Array.length hd in
-      Array.init rows ~f:(fun i ->
-          Array.concat (List.map matrices ~f:(fun m -> m.(i))))
+  Mat.of_col_vecs_list @@ List.concat_map matrices ~f:Mat.to_col_vecs_list
 
-let map f matrix = Array.map ~f:(Array.map ~f) matrix
-let to_array a = a
-let of_array a = a
+let map f matrix = Mat.map f matrix
+let to_array = Mat.to_array
+let of_array = Mat.of_array
 
 let one_hot index size =
-  let arr = Array.create ~len:size 0. in
-  arr.(index) <- 1.;
-  [| arr |]
+  let v = Array.create ~len:size 0. in
+  v.(index) <- 1.;
+  Mat.of_array [| v |]
 
-let get_row matrix i = matrix.(i)
+let get_row matrix i = (Mat.to_array matrix).(i)
+let sum matrix = Mat.sum matrix
 
-let sum matrix =
-  Array.fold matrix ~init:0. ~f:(fun acc row ->
-      Array.fold row ~init:0. ~f:( +. ) +. acc)
+let map2 f m1 m2 =
+  Mat.of_array
+    (Array.map2_exn ~f:(Array.map2_exn ~f) (Mat.to_array m1) (Mat.to_array m2))
 
-let map2 f m1 m2 = Array.map2_exn ~f:(Array.map2_exn ~f) m1 m2
-let elementwise_mul m1 m2 = map2 ( *. ) m1 m2
-let ones (rows, cols) = Array.make_matrix ~dimx:rows ~dimy:cols 1.0
-
-let random rows cols =
-  Array.init rows ~f:(fun _ ->
-      Array.init cols ~f:(fun _ -> Random.float 2. -. 1.))
-
-let get a i j = a.(i).(j)
-
-let size m =
-  let rows = Array.length m in
-  (rows, if rows = 0 then 0 else Array.length m.(0))
+let elementwise_mul m1 m2 = Mat.mul m1 m2
+let ones (rows, cols) = Mat.make rows cols 1.
+let random rows cols = Mat.random rows cols
+let get a i j = (Vec.to_array (Mat.to_col_vecs a).(j)).(i)
+let size m = (Mat.dim1 m, Mat.dim2 m)

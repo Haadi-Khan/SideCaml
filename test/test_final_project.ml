@@ -18,7 +18,7 @@ let print_2d_array arr =
 let print_matrix m = m |> to_array |> print_2d_array
 
 let eq_test expected_arr x _ =
-  assert_equal (of_array expected_arr) x ~printer:print_matrix
+  assert_equal expected_arr (to_array x) ~printer:print_2d_array
 
 (* [is_close expected actual]*)
 let is_close rel_tol =
@@ -40,8 +40,9 @@ let test_matrix_dot_single =
   eq_test [| [| 6. |] |] (dot m1 m2)
 
 let test_matrix_dot_fail _ =
-  assert_raises (Invalid_argument "Incompatible dimensions: 1 != 2") (fun () ->
-      dot (of_array [| [| 0.0 |] |]) m1)
+  assert_raises
+    (Failure "Lacaml.D.gemm: inner dimensions of matrices do not match (1,2)")
+    (fun () -> dot (of_array [| [| 0.0 |] |]) m1)
 
 let test_matrix_transpose =
   eq_test [| [| 1.; 3. |]; [| 2.; 4. |] |] (transpose m1)
@@ -68,7 +69,7 @@ let test_matrix_reshape =
     [| [| 1.; 2.; 3.; 4.; 5.; 6. |]; [| 7.; 8.; 9.; 10.; 11.; 12. |] |]
     (reshape m3 2 6)
 
-let test_matrix_concat_empty = eq_test [| [||] |] (concat [])
+let test_matrix_concat_empty = eq_test [||] (concat [])
 
 let test_matrix_concat =
   eq_test

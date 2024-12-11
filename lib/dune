@@ -1,6 +1,6 @@
 (library
  (name final_project)
- (libraries core yojson)
+ (libraries core yojson lacaml)
  (preprocess
   (pps ppx_jane))
  (instrumentation

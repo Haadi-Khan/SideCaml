@@ -26,9 +26,6 @@ val transformer_block : t -> Matrix.t -> Matrix.t
 (** [transformer_block config input] applies a transformer block to the input
     matrix. *)
 
-val prepare_input : 'a array -> Matrix.t
-(** [prepare_input input] converts an array of arrays into a matrix. *)
-
 val sample_from_distribution : float array -> int
 (** [sample_from_distribution distribution] samples an index from a categorical
     distribution. *)
