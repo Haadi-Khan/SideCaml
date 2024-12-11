@@ -10,7 +10,8 @@ let dot a b =
   let cols_b = Array.length b.(0) in
   if cols_a <> rows_b then
     invalid_arg
-      (Printf.sprintf "Incompatible dimensions: %d != %d" cols_a rows_b);
+      (Printf.sprintf "Incompatible dimensions: %d != %d" cols_a rows_b)
+    [@coverage off];
   Array.init rows_a ~f:(fun i ->
       Array.init cols_b ~f:(fun j ->
           Array.fold ~init:0.
@@ -24,9 +25,6 @@ let transpose a =
 
 let scale a s = Array.map a ~f:(fun row -> Array.map row ~f:(fun x -> x *. s))
 
-let apply2 f a b =
-  Array.map2_exn a b ~f:(fun row1 row2 -> Array.map2_exn row1 row2 ~f)
-
 let softmax a =
   Array.map a ~f:(fun row ->
       let max_val =
@@ -37,10 +35,10 @@ let softmax a =
       let sum = Array.fold exp_vals ~init:0. ~f:( +. ) in
       Array.map exp_vals ~f:(fun x -> x /. sum))
 
-let reshape a dims =
+let reshape a rows cols =
   let flattened = Array.concat_map a ~f:Array.copy in
-  Array.init dims.(0) ~f:(fun i ->
-      Array.init dims.(1) ~f:(fun j -> flattened.((i * dims.(1)) + j)))
+  Array.init rows ~f:(fun i ->
+      Array.init cols ~f:(fun j -> flattened.((i * cols) + j)))
 
 let concat matrices =
   match matrices with
@@ -74,3 +72,7 @@ let random rows cols =
       Array.init cols ~f:(fun _ -> Random.float 2. -. 1.))
 
 let get a i j = a.(i).(j)
+
+let size m =
+  let rows = Array.length m in
+  (rows, if rows = 0 then 0 else Array.length m.(0))

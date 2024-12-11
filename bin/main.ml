@@ -351,7 +351,9 @@ let () =
       | Some 5 ->
           let config = init_transformer () in
           let tc = training_config 32 0.0001 100 "checkpoints" in
-          let dataset = load_dataset "data/wikitext/wikitext-103/wiki.train.tokens" in
+          let dataset =
+            load_dataset "data/wikitext/wikitext-103/wiki.train.tokens"
+          in
           print_endline "Done reading dataset";
           train config tc dataset
       | _ ->

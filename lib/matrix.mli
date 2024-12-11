@@ -11,18 +11,13 @@ val transpose : t -> t
 val scale : t -> float -> t
 (** [scale a s] scales all elements of the matrix [a] by the scalar [s]. *)
 
-val apply2 : (float -> float -> float) -> t -> t -> t
-(** [apply2 f a b] applies the binary function [f] element-wise to matrices [a]
-    and [b]. Raises [Invalid_argument] if the dimensions of [a] and [b] are not
-    the same. *)
-
 val softmax : t -> t
 (** [softmax a] computes the softmax of each row in the matrix [a]. *)
 
-val reshape : t -> int array -> t
-(** [reshape a dims] reshapes the matrix [a] into a new matrix with the given
-    dimensions [dims]. Raises [Invalid_argument] if the total number of elements
-    does not match. *)
+val reshape : t -> int -> int -> t
+(** [reshape a rows cols] reshapes the matrix [a] into a new matrix with the
+    given dimensions ([rows] x [cols]). Raises [Invalid_argument] if the total
+    number of elements does not match. *)
 
 val concat : t list -> t
 (** [concat matrices] concatenates a list of matrices along their columns.
@@ -66,3 +61,6 @@ val random : int -> int -> t
     random values between -1 and 1. *)
 
 val get : t -> int -> int -> float
+
+val size : t -> int * int
+(** [size m] returns the [(rows, cols)] of the matrix [m].*)

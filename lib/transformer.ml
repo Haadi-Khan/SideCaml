@@ -63,7 +63,7 @@ let scaled_dot_product_attention query key value mask =
   let scaled_scores = scale scores (1. /. Float.sqrt d_k) in
   let masked_scores =
     match mask with
-    | Some m -> apply2 ( *. ) scaled_scores m
+    | Some m -> map2 ( *. ) scaled_scores m
     | None -> scaled_scores
   in
   let attention_weights = softmax masked_scores in
@@ -71,7 +71,7 @@ let scaled_dot_product_attention query key value mask =
 
 let multi_head_attention config query key value mask =
   let head_dim = config.embedding_dim / config.num_heads in
-  let split_heads x = reshape x [| config.num_heads; head_dim |] in
+  let split_heads x = reshape x config.num_heads head_dim in
   let heads =
     List.init config.num_heads ~f:(fun _ ->
         let q = split_heads query in
