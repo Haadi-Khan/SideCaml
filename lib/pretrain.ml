@@ -112,10 +112,13 @@ let train config t dataset =
           let batch_size = Array.length batch in
           List.mapi
             ~f:(fun i input ->
-              Printf.printf "Forward pass %d/%d for input of size %d\n" (i + 1)
+              Printf.printf "Forward pass %d/%d for input of size %d%!" (i + 1)
                 batch_size (Array.length input);
-              Out_channel.flush stdout;
-              forward_pass !model_params input)
+              let start_time = Time_ns.now () in
+              let res = forward_pass !model_params input in
+              let elapsed = Time_ns.(Span.to_sec (diff (now ()) start_time)) in
+              Printf.printf " [done in %.3fs]\n%!" elapsed;
+              res)
             (Array.to_list batch)
         in
         Printf.printf "Forward pass complete - Output logits size: %d\n"
