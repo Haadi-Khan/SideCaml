@@ -6,7 +6,13 @@ open Feedforward
 open Tokenizer
 open Transformer
 
-(* Load model parameters from a file *)
+type t = {
+  batch_size : int;
+  learning_rate : float;
+  max_epochs : int;
+  checkpoint_dir : string;
+}
+
 let load_model filename =
   let ic = In_channel.create filename in
   let model = Marshal.from_channel ic in
@@ -18,13 +24,6 @@ let save_model config filename =
   let oc = Out_channel.create filename in
   Marshal.to_channel oc config [];
   Out_channel.close oc
-
-type training_config = {
-  batch_size : int;
-  learning_rate : float;
-  max_epochs : int;
-  checkpoint_dir : string;
-}
 
 (* Load and preprocess dataset *)
 let load_dataset filename =
@@ -83,19 +82,19 @@ let update_parameters params gradients =
   Transformer.update_weights params gradients
 
 (* Training loop *)
-let train config training_config dataset =
-  Printf.printf "Starting training with %d epochs\n" training_config.max_epochs;
+let train config t dataset =
+  Printf.printf "Starting training with %d epochs\n" t.max_epochs;
   Out_channel.flush stdout;
-  Printf.printf "Batch size: %d\n" training_config.batch_size;
+  Printf.printf "Batch size: %d\n" t.batch_size;
   Out_channel.flush stdout;
 
-  let batches = create_batches dataset training_config.batch_size in
+  let batches = create_batches dataset t.batch_size in
   Printf.printf "Created %d batches\n" (List.length batches);
   Out_channel.flush stdout;
 
   let model_params = ref config in
 
-  for epoch = 1 to training_config.max_epochs do
+  for epoch = 1 to t.max_epochs do
     Printf.printf "\nEpoch %d:\n" epoch;
     Out_channel.flush stdout;
     let total_loss = ref 0. in
@@ -155,8 +154,7 @@ let train config training_config dataset =
         Out_channel.flush stdout;
 
         model_params :=
-          update_parameters !model_params training_config.learning_rate
-            gradients;
+          update_parameters !model_params t.learning_rate gradients;
         Printf.printf "Updated model parameters\n";
         Out_channel.flush stdout);
 
@@ -164,3 +162,6 @@ let train config training_config dataset =
       (!total_loss /. float_of_int (List.length batches));
     Out_channel.flush stdout
   done
+
+let training_config batch_size learning_rate max_epochs checkpoint_dir =
+  { batch_size; learning_rate; max_epochs; checkpoint_dir }

@@ -308,17 +308,10 @@ let () =
                   | Error _ -> Printf.printf "\nFailed to generate post\n"))
           | Some 5 ->
               let config = init_transformer () in
-              let training_config =
-                {
-                  batch_size = 32;
-                  learning_rate = 0.0001;
-                  max_epochs = 100;
-                  checkpoint_dir = "checkpoints";
-                }
-              in
+              let tc = training_config 32 0.0001 100 "checkpoints" in
               let dataset = load_dataset "data/wiki.train.tokens" in
               print_endline "Done reading dataset";
-              train config training_config dataset
+              train config tc dataset
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
@@ -357,17 +350,10 @@ let () =
               | Error _ -> Printf.printf "\nFailed to generate post\n"))
       | Some 5 ->
           let config = init_transformer () in
-          let training_config =
-            {
-              batch_size = 32;
-              learning_rate = 0.0001;
-              max_epochs = 100;
-              checkpoint_dir = "checkpoints";
-            }
-          in
+          let tc = training_config 32 0.0001 100 "checkpoints" in
           let dataset = load_dataset "data/wikitext/wikitext-103/wiki.train.tokens" in
           print_endline "Done reading dataset";
-          train config training_config dataset
+          train config tc dataset
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())
