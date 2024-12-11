@@ -13,7 +13,7 @@ let print m =
   |> List.map (fun row -> "\n" ^ String.concat ", " @@ List.map Float.to_string row)
   |> String.concat ""
 
-  let eq_test expected_arr x =
+let eq_test expected_arr x =
   fun _ -> assert_equal (of_array expected_arr) x ~printer:print
 
 let test_matrix_dot =
@@ -24,8 +24,14 @@ let test_matrix_dot_single =
   let m2 = of_array [| [| 3. |] |] in
   eq_test [| [| 6. |] |] (dot m1 m2)
 
+let test_matrix_dot_fail _ =
+  assert_raises 
+    (Invalid_argument "Incompatible dimensions: 1 != 2") 
+    (fun () -> dot (of_array [|[|0.0|]|]) m1)
+
 let test_matrix_transpose =
   eq_test [| [| 1.; 3. |]; [| 2.; 4.; |] |] (transpose m1)
+
 
 let () =
   run_test_tt_main
@@ -33,5 +39,6 @@ let () =
     >::: [
            "test_matrix_dot" >:: test_matrix_dot;
            "test_matrix_dot_single" >:: test_matrix_dot_single;
-           "test_matrix_transpose" >:: test_matrix_transpose
+           "test_matrix_transpose" >:: test_matrix_transpose;
+           "test_matrix_dot_fail" >:: test_matrix_dot_fail
          ])

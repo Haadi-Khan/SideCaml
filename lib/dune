@@ -1,4 +1,5 @@
 (library
  (name final_project)
  (libraries core yojson)
- (preprocess (pps ppx_jane)))
+ (preprocess (pps ppx_jane))
+ (instrumentation (backend bisect_ppx)))

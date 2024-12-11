@@ -2,3 +2,4 @@ _build/
 _opam/
 /posts.csv
 /posts.json
+_coverage/
