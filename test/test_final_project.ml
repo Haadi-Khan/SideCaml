@@ -74,8 +74,8 @@ let test_matrix_dot_fail _ =
 (* let test_matrix_scale = eq_test [| [| 3.; 6. |]; [| 9.; 12. |] |] (scale m1
    3.0) *)
 
-let test_matrix_map2 =
-  eq_test [| [| -4.; -4. |]; [| -4.; -4. |] |] (map2 ( -. ) m1 m2)
+(* let test_matrix_map2 =
+  eq_test [| [| -4.; -4. |]; [| -4.; -4. |] |] (map2 ( -. ) m1 m2) *)
 
 let test_matrix_softmax =
   is_close_test
@@ -194,7 +194,7 @@ let () =
            "test_matrix_dot_fail" >:: test_matrix_dot_fail;
            (* "test_matrix_transpose" >:: test_matrix_transpose; *)
            (* "test_matrix_scale" >:: test_matrix_scale; *)
-           "test_matrix_map2" >:: test_matrix_map2;
+           (* "test_matrix_map2" >:: test_matrix_map2; *)
            "test_matrix_softmax" >:: test_matrix_softmax;
            "test_matrix_reshape" >:: test_matrix_reshape;
            "test_matrix_concat_empty" >:: test_matrix_concat_empty;

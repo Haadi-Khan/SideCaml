@@ -1,8 +1,6 @@
 open Core
 open Yojson.Basic.Util
 open Matrix
-open Layernorm
-open Feedforward
 open Tokenizer
 open Transformer
 
@@ -40,26 +38,22 @@ let load_dataset filename =
 
 (* Create batches *)
 let create_batches texts batch_size =
-  Printf.printf "Creating batches from %d texts with batch size %d\n"
+  Printf.printf "Creating batches from %d texts with batch size %d\n%!"
     (List.length texts) batch_size;
-  Out_channel.flush stdout;
 
   let tokens = Array.of_list (List.map ~f:encode texts) in
-  Printf.printf "Encoded tokens array length: %d\n" (Array.length tokens);
-  Out_channel.flush stdout;
+  Printf.printf "Encoded tokens array length: %d\n%!" (Array.length tokens);
 
   let batches =
     Array.init batch_size ~f:(fun i ->
-        Printf.printf "Creating batch %d/%d\n" (i + 1) batch_size;
-        Out_channel.flush stdout;
+        Printf.printf "Creating batch %d/%d\n%!" (i + 1) batch_size;
         Array.init
           (Array.length tokens / batch_size)
           ~f:(fun j -> tokens.(i + (j * batch_size))))
   in
 
-  Printf.printf "Created %d batches of size %d\n" (Array.length batches)
+  Printf.printf "Created %d batches of size %d\n%!" (Array.length batches)
     (if Array.length batches > 0 then Array.length batches.(0) else 0);
-  Out_channel.flush stdout;
 
   Array.to_list batches
 
@@ -83,30 +77,24 @@ let update_parameters params gradients =
 (* Training loop *)
 let train config t dataset =
   Printf.printf "Starting training with %d epochs\n" t.max_epochs;
-  Out_channel.flush stdout;
   Printf.printf "Batch size: %d\n" t.batch_size;
-  Out_channel.flush stdout;
 
   let batches = create_batches dataset t.batch_size in
   Printf.printf "Created %d batches\n" (List.length batches);
-  Out_channel.flush stdout;
 
   let model_params = ref config in
 
   for epoch = 1 to t.max_epochs do
     Printf.printf "\nEpoch %d:\n" epoch;
-    Out_channel.flush stdout;
     let total_loss = ref 0. in
 
     List.iteri batches ~f:(fun batch_idx batch ->
         Printf.printf "\nProcessing batch %d/%d\n" (batch_idx + 1)
           (List.length batches);
-        Out_channel.flush stdout;
 
         (* Forward pass *)
         Printf.printf "Forward pass - Input batch size: %d\n"
           (Array.length batch);
-        Out_channel.flush stdout;
         let logits =
           let batch_size = Array.length batch in
           List.mapi
@@ -118,16 +106,13 @@ let train config t dataset =
         in
         Printf.printf "Forward pass complete - Output logits size: %d\n"
           (List.length logits);
-        Out_channel.flush stdout;
 
         (* Print sample logits *)
         (match List.hd logits with
         | Some first_logit ->
             Printf.printf "Sample logit shape: %d\n" (Matrix.length first_logit);
-            Out_channel.flush stdout
         | None ->
-            Printf.printf "No logits produced!\n";
-            Out_channel.flush stdout);
+            Printf.printf "No logits produced!\n");
 
         (* Calculate loss *)
         let batch_loss =
@@ -138,27 +123,22 @@ let train config t dataset =
                   (Matrix.of_array [| Matrix.vec_to_array pred |])
                   (Array.get target 0)
               in
-              Printf.printf "Sample loss: %f\n" loss;
-              Out_channel.flush stdout;
+              (* Printf.printf "Sample loss: %f\n%!" loss; *)
               acc +. loss)
-            (List.zip_exn logits (List.tl_exn (Array.to_list batch)))
+            (List.zip_exn logits (Array.to_list batch))
         in
         Printf.printf "Batch %d loss: %f\n" (batch_idx + 1) batch_loss;
-        Out_channel.flush stdout;
 
         (* Backward pass & update *)
         let gradients = calculate_gradients batch_loss in
         Printf.printf "Calculated gradients\n";
-        Out_channel.flush stdout;
 
         model_params :=
           update_parameters !model_params t.learning_rate gradients;
-        Printf.printf "Updated model parameters\n";
-        Out_channel.flush stdout);
+        Printf.printf "Updated model parameters\n");
 
     Printf.printf "\nEpoch %d complete - Average loss: %f\n" epoch
       (!total_loss /. float_of_int (List.length batches));
-    Out_channel.flush stdout
   done
 
 let training_config batch_size learning_rate max_epochs checkpoint_dir =

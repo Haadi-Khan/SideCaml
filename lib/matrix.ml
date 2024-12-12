@@ -7,9 +7,6 @@ type vec = Vec.t
 
 let dot a b = gemm a b [@@inline]
 let mat_dot_vec m v = gemv m v [@@inline]
-(* let transpose a = Mat.transpose_copy a *)
-(* let scale a s = Mat.map (( *. ) s) a *)
-
 let dot_transpose_and_scale a b t = gemm ~transb:`T ~alpha:t a b [@@inline]
 
 let softmax a =
@@ -26,8 +23,6 @@ let reshape a rows cols =
   let old_cols = Mat.dim2 a in
   Mat.init_cols rows cols (fun row col ->
       let i = ((row - 1) * cols) + col - 1 in
-      (* Printf.printf "row = %d, col = %d, i = %d, %d, %d\n" row col i (i /
-         old_cols) (i mod old_cols); *)
       arr.(i / old_cols).(i mod old_cols))
 
 let concat matrices =
@@ -47,15 +42,19 @@ let one_hot index size =
 let get_row matrix i = Mat.copy_row matrix (i + 1)
 let sum matrix = Mat.sum matrix
 
-let map2 f m1 m2 =
-  Mat.of_array
-    (Array.map2_exn ~f:(Array.map2_exn ~f) (Mat.to_array m1) (Mat.to_array m2))
-
 let elementwise_mul m1 m2 = Mat.mul m1 m2 [@@inline]
 let ones (rows, cols) = Mat.make rows cols 1.
 let random rows cols = Mat.random rows cols
 let get a i j = (Vec.to_array (Mat.to_col_vecs a).(j)).(i)
 let size m = (Mat.dim1 m, Mat.dim2 m)
+
+let add m1 alpha m2 = 
+  let rows, cols = size m1 in
+  let out = Mat.make0 rows cols in
+  ignore @@ Mat.add m1 out ~c:out;
+  Mat.axpy ~alpha:alpha m2 out;
+  out
+
 let length = Vec.dim
 let to_lacaml_vector = Fun.id
 let of_lacaml_vector = Fun.id

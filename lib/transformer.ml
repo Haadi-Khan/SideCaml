@@ -1,7 +1,5 @@
 open Core
 open Yojson.Basic.Util
-open Layernorm
-open Feedforward
 open Tokenizer
 open Matrix
 
@@ -23,8 +21,9 @@ type t = {
 
 let update_weights (model : t) (learning_rate : float) (gradients : Matrix.mat)
     : t =
-  let update_matrix m g =
-    Matrix.map2 (fun w gradient -> w -. (learning_rate *. gradient)) m g
+  
+  let update_matrix m g = 
+    Matrix.add m (-. learning_rate) g
   in
   {
     model with
@@ -82,18 +81,28 @@ let multi_head_attention config query key value mask =
   let heads = Array.init config.num_heads ~f:(fun _ -> sdpa) in
   concat heads
 
+let feedforward input w1 w2 =
+  let intermediate = Matrix.dot input w1 in
+  Matrix.relu_in_place intermediate;
+  Matrix.dot intermediate w2
+[@@inline]
+
+let layernorm layer =
+  let mean = Matrix.mean layer in
+  let variance = Matrix.var ~mean_:mean layer in
+  let denominator = Float.sqrt (Matrix.vec_sum variance +. 1e-6) in
+  let layer_minus_mean = Matrix.mat_add_vec layer (-1.) mean in
+  Matrix.divide_in_place layer_minus_mean denominator;
+  layer_minus_mean
+[@@inline]
+
 let transformer_block config input =
   let attention = multi_head_attention config input input input None in
-  let normalized = Layernorm.apply (attention |> Layernorm.of_matrix) in
+  let normalized = layernorm attention in
   let w1 = Matrix.random config.embedding_dim (4 * config.embedding_dim) in
   let w2 = Matrix.random (4 * config.embedding_dim) config.embedding_dim in
-  let feedforward =
-    Feedforward.apply
-      (normalized |> Layernorm.to_matrix |> Feedforward.of_matrix)
-      (Feedforward.of_matrix w1) (Feedforward.of_matrix w2)
-  in
-  feedforward |> Feedforward.to_matrix |> Layernorm.of_matrix |> Layernorm.apply
-  |> Layernorm.to_matrix
+  let ff = feedforward normalized w1 w2 in
+  layernorm ff
 
 let sample_from_distribution probs =
   let cumsum =
@@ -142,7 +151,7 @@ let forward_pass config tokens =
       config.embedding_dim (* #tokens x embedding dim *)
   in
   let transformer_output =
-    Util.log_time ~msg:"transformer_block " ~indent:2 (fun () ->
+    Util.log_time ~msg:"\n\ttransformer_block " (fun () ->
         transformer_block config input_embeddings (* n x embedding dim *))
   in
   let last_transformer_output =

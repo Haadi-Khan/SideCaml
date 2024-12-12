@@ -5,9 +5,9 @@ let time f =
   (elapsed, res)
 [@@inline]
 
-let log_time ?(precision = 3) ?(msg = "") ?(indent = 0) f =
+let log_time ?(precision = 3) ?(msg = "") f =
   let elapsed, res = time f in
-  Printf.printf "%s%s[done in %.*fs]\n%!" (String.make indent ' ') msg precision
+  Printf.printf "%s[done in %.*fs]\n%!" msg precision
     elapsed;
   res
 [@@inline]

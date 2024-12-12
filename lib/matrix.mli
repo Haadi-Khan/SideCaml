@@ -16,13 +16,6 @@ val mat_dot_vec : mat -> vec -> vec
 (** [dot m v] computes the product of the matrix [m] with the vector [v]. Make
     sure that [snd (size m) = length v]. *)
 
-(* val transpose : mat -> mat (** [transpose a] computes the transpose of the
-   matrix [a]. This is an expensive operation and should be avoided if possible.
-   *) *)
-
-(* val scale : mat -> float -> mat *)
-(** [scale a s] scales all elements of the matrix [a] by the scalar [s]. *)
-
 val mean : mat -> vec
 (** [mean m] computes the mean of each row of [m]. *)
 
@@ -78,16 +71,14 @@ val vec_sum : vec -> float
 (** [vec_sum v] computes the sum of all elements in the vector [v]. *)
 
 val mat_add_vec : mat -> float -> vec -> mat
-(** [mat_sub_col m alpha v] adds [alpha v] to each column of [m].*)
+(** [mat_add_vec m alpha v] adds [alpha v] to each column of [m].*)
+
+val add : mat -> float -> mat -> mat
+(** [add m1 alpha m2] returns the sum of [m1] and [alpha m2].*)
 
 val divide_in_place : mat -> float -> unit
 (** [divide_in_place m t] divides every element of [m] by [t], modifying [m] in
     place. *)
-
-val map2 : (float -> float -> float) -> mat -> mat -> mat
-(** [map2 f a b] applies the binary function [f] element-wise to matrices [a]
-    and [b]. Raises [Invalid_argument] if the dimensions of [a] and [b] are not
-    the same. *)
 
 val elementwise_mul : mat -> mat -> mat
 (** [elementwise_mult a b] computes the element-wise product of matrices [a] and
