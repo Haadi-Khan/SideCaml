@@ -306,12 +306,35 @@ let () =
                   | Ok text ->
                       Printf.printf "\nTransformer generated post:\n%s\n" text
                   | Error _ -> Printf.printf "\nFailed to generate post\n"))
-          | Some 5 ->
-              let config = init_transformer () in
-              let tc = training_config 32 0.0001 100 "checkpoints" in
-              let dataset = load_dataset "data/wiki.train.tokens" in
-              print_endline "Done reading dataset";
-              train config tc dataset
+          | Some 5 -> (
+              Printf.printf
+                "Choose: (1) Pretrain on wiki, (2) Fine-tune pretrained model \
+                 on posts? ";
+              match read_int_opt () with
+              | Some 1 ->
+                  let config = init_transformer () in
+                  let tc = training_config 32 0.0001 100 "checkpoints" in
+                  let dataset =
+                    try load_dataset "data/wiki.train.tokens"
+                    with Sys_error _ ->
+                      Printf.printf "Path not found: data/wiki.train.tokens\n";
+                      exit 1
+                  in
+                  print_endline "Done reading dataset";
+                  train config tc dataset
+              | Some 2 -> (
+                  try
+                    let config = load_model "checkpoints/model_final.ckpt" in
+                    let tc =
+                      training_config 16 0.00001 10 "checkpoints_finetuned"
+                    in
+                    let dataset = load_dataset "data/posts.json" in
+                    print_endline "Done reading dataset";
+                    train config tc dataset;
+                    print_endline "Fine-tuning complete"
+                  with Sys_error _ ->
+                    print_endline "Model checkpoint not found")
+              | _ -> print_endline "Invalid choice")
           | _ ->
               Printf.printf "Invalid choice, showing random post:\n";
               select_random_post "posts.json" ()))
@@ -348,14 +371,36 @@ let () =
               | Ok text ->
                   Printf.printf "\nTransformer generated post:\n%s\n" text
               | Error _ -> Printf.printf "\nFailed to generate post\n"))
-      | Some 5 ->
-          let config = init_transformer () in
-          let tc = training_config 32 0.0001 100 "checkpoints" in
-          let dataset =
-            load_dataset "data/wikitext/wikitext-103/wiki.train.tokens"
-          in
-          print_endline "Done reading dataset";
-          train config tc dataset
+      | Some 5 -> (
+          Printf.printf
+            "Choose: (1) Pretrain on wiki, (2) Fine-tune pretrained model on \
+             posts? ";
+          match read_int_opt () with
+          | Some 1 ->
+              let config = init_transformer () in
+              let tc = training_config 32 0.0001 100 "checkpoints" in
+              let dataset =
+                try load_dataset "data/wikitext/wikitext-103/wiki.train.tokens"
+                with Sys_error _ ->
+                  Printf.printf
+                    "Path not found: \
+                     data/wikitext/wikitext-103/wiki.train.tokens\n";
+                  exit 1
+              in
+              print_endline "Done reading dataset";
+              train config tc dataset
+          | Some 2 -> (
+              try
+                let config = load_model "checkpoints/model_final.ckpt" in
+                let tc =
+                  training_config 16 0.00001 10 "checkpoints_finetuned"
+                in
+                let dataset = load_dataset "data/posts.json" in
+                print_endline "Done reading dataset";
+                train config tc dataset;
+                print_endline "Fine-tuning complete"
+              with Sys_error _ -> print_endline "Invalid choice")
+          | _ -> print_endline "Invalid choice")
       | _ ->
           Printf.printf "Invalid choice, showing random post:\n";
           select_random_post "data/posts.json" ())

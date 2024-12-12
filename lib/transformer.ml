@@ -21,10 +21,7 @@ type t = {
 
 let update_weights (model : t) (learning_rate : float) (gradients : Matrix.mat)
     : t =
-  
-  let update_matrix m g = 
-    Matrix.add m (-. learning_rate) g
-  in
+  let update_matrix m g = Matrix.add m (-.learning_rate) g in
   {
     model with
     wk = update_matrix model.wk gradients;
@@ -41,6 +38,9 @@ type post = {
   comment_count : int;
   created_at : string;
 }
+
+let get_text = function
+  | { text; _ } -> text
 
 let load_posts filename =
   let json = Yojson.Basic.from_file filename in
@@ -151,8 +151,9 @@ let forward_pass config tokens =
       config.embedding_dim (* #tokens x embedding dim *)
   in
   let transformer_output =
-    Util.log_time ~msg:"\n\ttransformer_block " (fun () ->
-        transformer_block config input_embeddings (* n x embedding dim *))
+    (* Util.log_time ~msg:"\n\ttransformer_block " (fun () -> transformer_block
+       config input_embeddings (* n x embedding dim *)) *)
+    transformer_block config input_embeddings
   in
   let last_transformer_output =
     Matrix.(get_row transformer_output (fst (size transformer_output) - 1))
@@ -192,6 +193,34 @@ let init_transformer () =
       w2 = Matrix.random (4 * embedding_dim) embedding_dim;
     }
   in
+  let posts = load_posts "data/posts.json" in
+  let training_text = prepare_training_data posts in
+  let _ = encode training_text in
+  config
+
+let load_model filename =
+  let ic = In_channel.create filename in
+  let model = Marshal.from_channel ic in
+  In_channel.close ic;
+  model
+
+(* Load pretrained weights and update config *)
+let load_pretrained checkpoint_path =
+  let model = load_model checkpoint_path in
+  {
+    model with
+    (* Keep original architecture config but load pretrained weights *)
+    wk = model.wk;
+    wq = model.wq;
+    wv = model.wv;
+    wo = model.wo;
+    w1 = model.w1;
+    w2 = model.w2;
+  }
+
+(* Initialize with pretrained weights *)
+let init_transformer_pretrained checkpoint_path =
+  let config = load_pretrained checkpoint_path in
   let posts = load_posts "data/posts.json" in
   let training_text = prepare_training_data posts in
   let _ = encode training_text in

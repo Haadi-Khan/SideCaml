@@ -70,10 +70,6 @@ let calculate_gradients loss =
   Matrix.ones (1, 1)
 (* Replace with actual gradient computation *)
 
-(* Update parameters using gradient descent *)
-let update_parameters params gradients =
-  Transformer.update_weights params gradients
-
 (* Training loop *)
 let train config t dataset =
   Printf.printf "Starting training with %d epochs\n" t.max_epochs;
@@ -93,8 +89,8 @@ let train config t dataset =
           (List.length batches);
 
         (* Forward pass *)
-        Printf.printf "Forward pass - Input batch size: %d\n"
-          (Array.length batch);
+        (* Printf.printf "Forward pass - Input batch size: %d\n" *)
+        (* Array.length batch; *)
         let logits =
           let batch_size = Array.length batch in
           List.mapi
@@ -110,9 +106,8 @@ let train config t dataset =
         (* Print sample logits *)
         (match List.hd logits with
         | Some first_logit ->
-            Printf.printf "Sample logit shape: %d\n" (Matrix.length first_logit);
-        | None ->
-            Printf.printf "No logits produced!\n");
+            Printf.printf "Sample logit shape: %d\n" (Matrix.length first_logit)
+        | None -> Printf.printf "No logits produced!\n");
 
         (* Calculate loss *)
         let batch_loss =
@@ -134,12 +129,27 @@ let train config t dataset =
         Printf.printf "Calculated gradients\n";
 
         model_params :=
-          update_parameters !model_params t.learning_rate gradients;
-        Printf.printf "Updated model parameters\n");
+          Transformer.update_weights !model_params t.learning_rate gradients);
+
+    (* Add checkpoint saving at end of each epoch *)
+    if epoch mod 10 = 0 then begin
+      let checkpoint_file =
+        Printf.sprintf "%s/model_epoch_%d.ckpt" t.checkpoint_dir epoch
+      in
+      Printf.printf "Saving checkpoint to %s\n" checkpoint_file;
+      save_model !model_params checkpoint_file
+    end;
 
     Printf.printf "\nEpoch %d complete - Average loss: %f\n" epoch
-      (!total_loss /. float_of_int (List.length batches));
-  done
+      (!total_loss /. float_of_int (List.length batches))
+  done;
+
+  (* Save final model *)
+  let final_model_path =
+    Printf.sprintf "%s/model_final.ckpt" t.checkpoint_dir
+  in
+  Printf.printf "Saving final model to %s\n" final_model_path;
+  save_model !model_params final_model_path
 
 let training_config batch_size learning_rate max_epochs checkpoint_dir =
   { batch_size; learning_rate; max_epochs; checkpoint_dir }

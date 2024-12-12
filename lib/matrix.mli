@@ -111,3 +111,6 @@ val to_lacaml_vector : vec -> Lacaml.D.vec
 
 val of_lacaml_vector : Lacaml.D.vec -> vec
 (** [of_lacaml_vector m] converts from a Lacaml vector to a [vec]. *)
+
+val scale : mat -> float -> mat
+(** [scale m alpha] scales the matrix [m] by [alpha]. *)

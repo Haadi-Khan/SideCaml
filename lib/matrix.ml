@@ -41,18 +41,17 @@ let one_hot index size =
 
 let get_row matrix i = Mat.copy_row matrix (i + 1)
 let sum matrix = Mat.sum matrix
-
 let elementwise_mul m1 m2 = Mat.mul m1 m2 [@@inline]
 let ones (rows, cols) = Mat.make rows cols 1.
 let random rows cols = Mat.random rows cols
 let get a i j = (Vec.to_array (Mat.to_col_vecs a).(j)).(i)
 let size m = (Mat.dim1 m, Mat.dim2 m)
 
-let add m1 alpha m2 = 
+let add m1 alpha m2 =
   let rows, cols = size m1 in
   let out = Mat.make0 rows cols in
   ignore @@ Mat.add m1 out ~c:out;
-  Mat.axpy ~alpha:alpha m2 out;
+  Mat.axpy ~alpha m2 out;
   out
 
 let length = Vec.dim
@@ -102,3 +101,4 @@ let mat_add_vec m alpha v =
          col')
 
 let divide_in_place m t = ignore @@ Mat.map (fun x -> x /. t) ~b:m m
+let scale m scalar = Mat.map (fun x -> x *. scalar) m

@@ -19,10 +19,6 @@ val cross_entropy_loss : Matrix.mat -> int -> float
 val calculate_gradients : 'a -> Matrix.mat
 (** [calculate_gradients model input] computes the gradients of the model. *)
 
-val update_parameters : Transformer.t -> float -> Matrix.mat -> Transformer.t
-(** [update_parameters model learning_rate gradients] updates the parameters of
-    the model. *)
-
 val train : Transformer.t -> t -> string list -> unit
 (** [train model dataset] trains the model on a dataset. *)
 

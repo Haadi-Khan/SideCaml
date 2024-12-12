@@ -60,3 +60,6 @@ val position_encoding : int -> int -> Matrix.mat
 val update_weights : t -> float -> Matrix.mat -> t
 (** [update_weights params learning_rate gradients] updates the model parameters
     using gradient descent. *)
+
+val get_text : post -> string
+(** [get_text post] gets the text from a post. *)
