@@ -3,8 +3,19 @@ type t = {
   reason : string option;
 }
 
-(* List of banned words - can be expanded *)
-let banned_words = [ "badword1"; "badword2" ]
+(** Read a list of banned words from data. There's a limited set of bad words from training so I based it off of that*)
+let banned_words =
+  let ic = open_in "data/badwords.txt" in
+  let rec read_lines acc =
+    try
+      let line = input_line ic |> String.trim in
+      if line = "" then read_lines acc
+      else read_lines (line :: acc)
+    with End_of_file ->
+      close_in ic;
+      acc
+  in
+  read_lines []
 
 let check_text_length max_length text =
   if String.length text > max_length then
