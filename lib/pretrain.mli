@@ -13,13 +13,13 @@ val load_dataset : string -> string list
 val create_batches : string list -> int -> int array array list
 (** [create_batches dataset batch_size] creates batches from a dataset. *)
 
-val cross_entropy_loss : Matrix.t -> int -> float
+val cross_entropy_loss : Matrix.mat -> int -> float
 (** [cross_entropy_loss output target] computes the cross-entropy loss. *)
 
-val calculate_gradients : 'a -> Matrix.t
+val calculate_gradients : 'a -> Matrix.mat
 (** [calculate_gradients model input] computes the gradients of the model. *)
 
-val update_parameters : Transformer.t -> float -> Matrix.t -> Transformer.t
+val update_parameters : Transformer.t -> float -> Matrix.mat -> Transformer.t
 (** [update_parameters model learning_rate gradients] updates the parameters of
     the model. *)
 

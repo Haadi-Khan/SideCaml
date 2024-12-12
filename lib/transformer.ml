@@ -1,9 +1,9 @@
 open Core
 open Yojson.Basic.Util
-open Matrix
 open Layernorm
 open Feedforward
 open Tokenizer
+open Matrix
 
 type t = {
   (* Configuration *)
@@ -13,16 +13,16 @@ type t = {
   num_layers : int;
   dropout : float;
   (* Weights *)
-  wk : Matrix.t; (* Key weights *)
-  wq : Matrix.t; (* Query weights *)
-  wv : Matrix.t; (* Value weights *)
-  wo : Matrix.t; (* Output weights *)
-  w1 : Matrix.t; (* First feedforward layer *)
-  w2 : Matrix.t; (* Second feedforward layer *)
+  wk : Matrix.mat; (* Key weights *)
+  wq : Matrix.mat; (* Query weights *)
+  wv : Matrix.mat; (* Value weights *)
+  wo : Matrix.mat; (* Output weights *)
+  w1 : Matrix.mat; (* First feedforward layer *)
+  w2 : Matrix.mat; (* Second feedforward layer *)
 }
 
-let update_weights (model : t) (learning_rate : float) (gradients : Matrix.t) :
-    t =
+let update_weights (model : t) (learning_rate : float) (gradients : Matrix.mat)
+    : t =
   let update_matrix m g =
     Matrix.map2 (fun w gradient -> w -. (learning_rate *. gradient)) m g
   in
@@ -58,12 +58,14 @@ let prepare_training_data posts =
   List.map posts ~f:(fun post -> post.text) |> String.concat ~sep:" "
 
 let scaled_dot_product_attention query key value mask =
-  let d_k = Float.of_int (Array.length key.(0)) in
-  let scores = dot (Matrix.of_array query) (transpose (Matrix.of_array key)) in
-  let scaled_scores = scale scores (1. /. Float.sqrt d_k) in
+  let _, key_cols = Matrix.size key in
+  let d_k = Float.of_int key_cols in
+  let scaled_scores =
+    dot_transpose_and_scale query key (1. /. Float.sqrt d_k)
+  in
   let masked_scores =
     match mask with
-    | Some m -> map2 ( *. ) scaled_scores m
+    | Some m -> elementwise_mul scaled_scores m
     | None -> scaled_scores
   in
   let attention_weights = softmax masked_scores in
@@ -72,42 +74,26 @@ let scaled_dot_product_attention query key value mask =
 let multi_head_attention config query key value mask =
   let head_dim = config.embedding_dim / config.num_heads in
   let split_heads x = reshape x config.num_heads head_dim in
-  let heads =
-    List.init config.num_heads ~f:(fun _ ->
-        let q = split_heads query in
-        let k = split_heads key in
-        let v = split_heads value in
-        scaled_dot_product_attention (q |> Matrix.to_array)
-          (k |> Matrix.to_array) v mask)
-  in
+  let q = split_heads query in
+  let k = split_heads key in
+  let v = split_heads value in
+  (*TODO: is this right?*)
+  let sdpa = scaled_dot_product_attention q k v mask in
+  let heads = Array.init config.num_heads ~f:(fun _ -> sdpa) in
   concat heads
 
 let transformer_block config input =
   let attention = multi_head_attention config input input input None in
   let normalized = Layernorm.apply (attention |> Layernorm.of_matrix) in
-  let w1 =
-    Array.init config.embedding_dim ~f:(fun _ ->
-        Array.init (4 * config.embedding_dim) ~f:(fun _ ->
-            Random.float 2. -. 1.))
-  in
-  let w2 =
-    Array.init (4 * config.embedding_dim) ~f:(fun _ ->
-        Array.init config.embedding_dim ~f:(fun _ -> Random.float 2. -. 1.))
-  in
+  let w1 = Matrix.random config.embedding_dim (4 * config.embedding_dim) in
+  let w2 = Matrix.random (4 * config.embedding_dim) config.embedding_dim in
   let feedforward =
     Feedforward.apply
       (normalized |> Layernorm.to_matrix |> Feedforward.of_matrix)
-      (w1 |> Feedforward.of_array)
-      (w2 |> Feedforward.of_array)
+      (Feedforward.of_matrix w1) (Feedforward.of_matrix w2)
   in
-  Layernorm.apply
-    (feedforward |> Feedforward.to_array |> Matrix.of_array
-   |> Layernorm.of_matrix)
+  feedforward |> Feedforward.to_matrix |> Layernorm.of_matrix |> Layernorm.apply
   |> Layernorm.to_matrix
-
-(* let prepare_input tokens = Matrix.random (Array.length tokens) let
-   embedding_dim = 512 in Array.map tokens ~f:(fun _ -> Array.init embedding_dim
-   ~f:(fun _ -> Random.float 2. -. 1.)) |> Matrix.of_array *)
 
 let sample_from_distribution probs =
   let cumsum =
@@ -152,19 +138,20 @@ let is_repetitive tokens window_size =
 
 let forward_pass config tokens =
   let input_embeddings =
-    Matrix.random (Array.length tokens) config.embedding_dim
+    Matrix.random (Array.length tokens)
+      config.embedding_dim (* #tokens x embedding dim *)
   in
-  let transformer_output = transformer_block config input_embeddings in
-  let logits =
-    dot transformer_output
-      (Matrix.random config.embedding_dim config.vocab_size)
+  let transformer_output =
+    Util.log_time ~msg:"transformer_block " ~indent:2 (fun () ->
+        transformer_block config input_embeddings (* n x embedding dim *))
   in
-
-  (* TODO: what is the point of doing the full matrix multiplication when we
-     only need the last row? *)
-  let logits_rows, _ = Matrix.size logits in
-  (* TODO: compute this ahead of time *)
-  Matrix.get_row logits (logits_rows - 1)
+  let last_transformer_output =
+    Matrix.(get_row transformer_output (fst (size transformer_output) - 1))
+    (* embedding_dim *)
+  in
+  mat_dot_vec
+    (Matrix.random config.vocab_size config.embedding_dim)
+    last_transformer_output (* vocab_size *)
 
 let generate_text config () start_token length =
   let temperature = 0.7 in
@@ -173,7 +160,7 @@ let generate_text config () start_token length =
   Array.blit ~src:initial ~src_pos:0 ~dst:tokens ~dst_pos:0
     ~len:(Array.length initial);
   for pos = 0 to length - 1 do
-    let logits = forward_pass config tokens in
+    let logits = Matrix.vec_to_array @@ forward_pass config tokens in
     let next_token = sample_with_temperature logits temperature in
     tokens.(pos + 1) <- next_token
   done;

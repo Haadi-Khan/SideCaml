@@ -1,14 +1,12 @@
 open Core
 
-type t = Matrix.t
+type t = Matrix.mat
 
 let apply input w1 w2 =
-  let intermediate = Matrix.to_array (Matrix.dot input w1) in
-  let activated =
-    Array.map intermediate ~f:(Array.map ~f:(fun x -> Float.max 0. x))
-  in
-  Matrix.dot (Matrix.of_array activated) w2
+  let intermediate = Matrix.dot input w1 in
+  Matrix.relu_in_place intermediate;
+  Matrix.dot intermediate w2
+[@@inline]
 
-let of_array = Matrix.of_array
-let to_array = Matrix.to_array
-let of_matrix x = x
+let of_matrix x = x [@@inline]
+let to_matrix x = x [@@inline]

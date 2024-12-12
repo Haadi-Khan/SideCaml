@@ -9,20 +9,16 @@ val prepare_training_data : post list -> string
     concatenates them into a single string. *)
 
 val scaled_dot_product_attention :
-  float array array ->
-  float array array ->
-  Matrix.t ->
-  Matrix.t option ->
-  Matrix.t
+  Matrix.mat -> Matrix.mat -> Matrix.mat -> Matrix.mat option -> Matrix.mat
 (** [scaled_dot_product_attention query key value mask] computes the scaled dot
     product attention. *)
 
 val multi_head_attention :
-  t -> Matrix.t -> Matrix.t -> Matrix.t -> Matrix.t option -> Matrix.t
+  t -> Matrix.mat -> Matrix.mat -> Matrix.mat -> Matrix.mat option -> Matrix.mat
 (** [multi_head_attention config query key value mask] computes the multi-head
     attention. *)
 
-val transformer_block : t -> Matrix.t -> Matrix.t
+val transformer_block : t -> Matrix.mat -> Matrix.mat
 (** [transformer_block config input] applies a transformer block to the input
     matrix. *)
 
@@ -42,7 +38,7 @@ val is_repetitive : int array -> int -> bool
 (** [is_repetitive sequence n] checks if the last n tokens in the sequence are
     repetitive. *)
 
-val forward_pass : t -> int array -> float array
+val forward_pass : t -> int array -> Matrix.vec
 (** [forward_pass model input] computes the forward pass of the model. *)
 
 val generate_text : t -> unit -> string -> int -> string
@@ -57,10 +53,10 @@ val get_random_first_word : string -> string
 val clean_text : string -> string
 (** [clean_text text] cleans the text by removing special characters. *)
 
-val position_encoding : int -> int -> Matrix.t
+val position_encoding : int -> int -> Matrix.mat
 (** [position_encoding max_length embedding_dim] computes the position encoding
     matrix. *)
 
-val update_weights : t -> float -> Matrix.t -> t
+val update_weights : t -> float -> Matrix.mat -> t
 (** [update_weights params learning_rate gradients] updates the model parameters
     using gradient descent. *)

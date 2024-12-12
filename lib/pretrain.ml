@@ -66,9 +66,8 @@ let create_batches texts batch_size =
 (* Calculate loss *)
 let cross_entropy_loss predicted target =
   let log_softmax = Matrix.map Float.log (Matrix.softmax predicted) in
-  let target_dist =
-    Matrix.one_hot target (Array.length (Matrix.get_row predicted 0))
-  in
+  let _, predicted_cols = Matrix.size predicted in
+  let target_dist = Matrix.one_hot target predicted_cols in
   -.Matrix.sum (Matrix.elementwise_mul log_softmax target_dist)
 
 (* Calculate gradients with respect to loss *)
@@ -112,13 +111,9 @@ let train config t dataset =
           let batch_size = Array.length batch in
           List.mapi
             ~f:(fun i input ->
-              Printf.printf "Forward pass %d/%d for input of size %d%!" (i + 1)
+              Printf.printf "Forward pass %d/%d for input of size %d %!" (i + 1)
                 batch_size (Array.length input);
-              let start_time = Time_ns.now () in
-              let res = forward_pass !model_params input in
-              let elapsed = Time_ns.(Span.to_sec (diff (now ()) start_time)) in
-              Printf.printf " [done in %.3fs]\n%!" elapsed;
-              res)
+              Util.log_time (fun () -> forward_pass !model_params input))
             (Array.to_list batch)
         in
         Printf.printf "Forward pass complete - Output logits size: %d\n"
@@ -128,7 +123,7 @@ let train config t dataset =
         (* Print sample logits *)
         (match List.hd logits with
         | Some first_logit ->
-            Printf.printf "Sample logit shape: %d\n" (Array.length first_logit);
+            Printf.printf "Sample logit shape: %d\n" (Matrix.length first_logit);
             Out_channel.flush stdout
         | None ->
             Printf.printf "No logits produced!\n";
@@ -140,7 +135,7 @@ let train config t dataset =
             ~f:(fun acc (pred, target) ->
               let loss =
                 cross_entropy_loss
-                  (Matrix.of_array [| pred |])
+                  (Matrix.of_array [| Matrix.vec_to_array pred |])
                   (Array.get target 0)
               in
               Printf.printf "Sample loss: %f\n" loss;
