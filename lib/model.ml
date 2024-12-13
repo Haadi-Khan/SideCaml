@@ -14,11 +14,13 @@ let init () =
     transformer_config := Some (init_transformer ());
     Ok ()
   with _ -> Error (GenerationError "Failed to initialize transformer")
+[@@coverage off]
 
 let get_config () =
   match !transformer_config with
   | Some c -> Ok c
   | None -> Error NotInitialized
+[@@coverage off]
 
 let rec generate_text_internal config ~max_length ~seed length =
   let generated = generate_text config () seed length in

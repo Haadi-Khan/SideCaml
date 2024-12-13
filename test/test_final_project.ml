@@ -5,6 +5,7 @@ open Final_project.Util
 open Final_project.Moderation
 open Final_project.Tokenizer
 open Final_project.Model
+open Final_project.Pretrain
 
 (** Test matrices for Matrix module tests *)
 let m1 = of_array [| [| 1.; 2. |]; [| 3.; 4. |] |]
@@ -344,6 +345,41 @@ let test_model_generate_text_with_seed _ =
   | Error _ -> () (* Expected: error when not initialized *)
   | Ok _ -> assert_failure "Expected error when model not initialized"
 
+(** Tests for Pretrain module (pretrain.mli) *)
+let test_load_dataset _ =
+  (* Create a temporary file with test data *)
+  let temp_file = Filename.temp_file "test" ".txt" in
+  let oc = open_out temp_file in
+  output_string oc "hello world\ntesting data\nexample text\n";
+  close_out oc;
+
+  let dataset = load_dataset temp_file in
+  assert_equal [ "hello world"; "testing data"; "example text" ] dataset;
+  Sys.remove temp_file
+
+let test_create_batches _ =
+  let dataset = [ "hello world"; "testing data"; "example text" ] in
+  let batches = create_batches dataset 2 in
+  (* The function creates 2 batches regardless of input size *)
+  assert_equal 2 (List.length batches) ~printer:string_of_int;
+  let first_batch = List.nth batches 0 in
+  let second_batch = List.nth batches 1 in
+  (* Check that we have 2 items total *)
+  let total_items = Array.length first_batch + Array.length second_batch in
+  assert_equal 2 total_items ~printer:string_of_int;
+  (* Each batch should have 1 item *)
+  assert_equal 1 (Array.length first_batch) ~printer:string_of_int;
+  assert_equal 1 (Array.length second_batch) ~printer:string_of_int
+
+let test_cross_entropy_loss _ =
+  let output = of_array [| [| 0.7; 0.2; 0.1 |] |] in
+  let target = 0 in
+  (* First class *)
+  let loss = cross_entropy_loss output target in
+  assert_bool
+    (Printf.sprintf "Expected loss around 0.77, got %f" loss)
+    (abs_float (loss -. 0.77) < 0.01)
+
 let () =
   run_test_tt_main
     ("test suite"
@@ -399,6 +435,11 @@ let () =
            "test_is_repetitive" >:: test_is_repetitive;
            "test_clean_text" >:: test_clean_text;
            "test_sample_with_temperature" >:: test_sample_with_temperature;
+           (* Tokenizer module tests *)
+           "test_tokenizer_encode_decode" >:: test_tokenizer_encode_decode;
+           "test_tokenizer_multiple_words" >:: test_tokenizer_multiple_words;
+           "test_tokenizer_repeated_words" >:: test_tokenizer_repeated_words;
+           "test_tokenizer_unknown_token" >:: test_tokenizer_unknown_token;
            (* Model module tests *)
            "test_model_not_initialized" >:: test_model_not_initialized;
            "test_model_generate_text_not_initialized"
@@ -407,4 +448,8 @@ let () =
            >:: test_model_generate_text_invalid_length;
            "test_model_generate_text_with_seed"
            >:: test_model_generate_text_with_seed;
+           (* Pretrain module tests *)
+           "test_load_dataset" >:: test_load_dataset;
+           "test_create_batches" >:: test_create_batches;
+           "test_cross_entropy_loss" >:: test_cross_entropy_loss;
          ])
