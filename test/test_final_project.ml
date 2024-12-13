@@ -541,113 +541,144 @@ let test_cross_entropy_loss _ =
     (Printf.sprintf "Expected loss around 0.77, got %f" loss)
     (abs_float (loss -. 0.77) < 0.01)
 
-let () =
-  run_test_tt_main
-    ("test suite"
-    >::: [
-           (* Matrix module tests *)
-           "test_matrix_dot" >:: test_matrix_dot;
-           "test_matrix_dot_single" >:: test_matrix_dot_single;
-           "test_matrix_dot_fail" >:: test_matrix_dot_fail;
-           "test_matrix_softmax" >:: test_matrix_softmax;
-           "test_matrix_reshape" >:: test_matrix_reshape;
-           "test_matrix_concat_empty" >:: test_matrix_concat_empty;
-           "test_matrix_concat" >:: test_matrix_concat;
-           "test_matrix_map" >:: test_matrix_map;
-           "test_matrix_one_hot" >:: test_matrix_one_hot;
-           "test_matrix_get_row" >:: test_matrix_get_row;
-           "test_matrix_sum" >:: test_matrix_sum;
-           "test_matrix_elementwise_mul" >:: test_matrix_elementwise_mul;
-           "test_matrix_ones" >:: test_matrix_ones;
-           "test_matrix_random_size" >:: test_matrix_random_size;
-           "test_matrix_random_values" >:: test_matrix_random_values;
-           "test_matrix_get" >:: test_matrix_get;
-           "test_matrix_size_empty" >:: test_matrix_size_empty;
-           "test_matrix_mean" >:: test_matrix_mean;
-           "test_matrix_var_1" >:: test_matrix_var_1;
-           "test_matrix_var_2" >:: test_matrix_var_2;
-           "test_matrix_vec_sum" >:: test_matrix_vec_sum;
-           "test_matrix_add_vec" >:: test_matrix_add_vec;
-           "test_matrix_divide_in_place" >:: test_matrix_divide_in_place;
-           "test_dot_transpose_and_scale" >:: test_dot_transpose_and_scale;
-           "test_mat_dot_vec" >:: test_mat_dot_vec;
-           "test_relu_in_place" >:: test_relu_in_place;
-           "test_add" >:: test_add;
-           "test_scale" >:: test_scale;
-           "test_length" >:: test_length;
-           "test_lacaml_matrix_conversion" >:: test_lacaml_matrix_conversion;
-           "test_lacaml_vector_conversion" >:: test_lacaml_vector_conversion;
-           "test_softmax_empty" >:: test_softmax_empty;
-           "test_softmax_single_value" >:: test_softmax_single_value;
-           "test_relu_in_place_empty" >:: test_relu_in_place_empty;
-           "test_relu_in_place_all_negative" >:: test_relu_in_place_all_negative;
-           "test_concat_empty_matrices" >:: test_concat_empty_matrices;
-           "test_concat_single_matrix" >:: test_concat_single_matrix;
-           "test_add_with_zero_matrix" >:: test_add_with_zero_matrix;
-           "test_elementwise_mul_with_zero_matrix"
-           >:: test_elementwise_mul_with_zero_matrix;
-           (* Util module tests *)
-           "test_time" >:: test_time;
-           "test_log_time" >:: test_log_time;
-           "test_log_time_no_message" >:: test_log_time_no_message;
-           "test_log_time_no_precision" >:: test_log_time_no_precision;
-           (* Moderation module tests *)
-           "test_check_text_length_valid" >:: test_check_text_length_valid;
-           "test_check_text_length_invalid" >:: test_check_text_length_invalid;
-           "test_contains_banned_words_clean"
-           >:: test_contains_banned_words_clean;
-           "test_contains_banned_words_banned"
-           >:: test_contains_banned_words_banned;
-           "test_moderate_text_valid" >:: test_moderate_text_valid;
-           "test_moderate_text_invalid_length"
-           >:: test_moderate_text_invalid_length;
-           "test_moderate_text_invalid_content"
-           >:: test_moderate_text_invalid_content;
-           "test_check_text_length_empty" >:: test_check_text_length_empty;
-           "test_check_text_length_exact" >:: test_check_text_length_exact;
-           "test_check_text_length_unicode" >:: test_check_text_length_unicode;
-           "test_check_text_length_whitespace"
-           >:: test_check_text_length_whitespace;
-           "test_contains_banned_words_empty"
-           >:: test_contains_banned_words_empty;
-           "test_contains_banned_words_whitespace"
-           >:: test_contains_banned_words_whitespace;
-           "test_contains_banned_words_mixed_case"
-           >:: test_contains_banned_words_mixed_case;
-           "test_contains_banned_words_substring"
-           >:: test_contains_banned_words_substring;
-           "test_moderate_text_empty" >:: test_moderate_text_empty;
-           "test_moderate_text_max_length_zero"
-           >:: test_moderate_text_max_length_zero;
-           "test_moderate_text_max_length_negative"
-           >:: test_moderate_text_max_length_negative;
-           "test_moderate_text_multiple_banned_words"
-           >:: test_moderate_text_multiple_banned_words;
-           "test_moderate_text_just_under_limit"
-           >:: test_moderate_text_just_under_limit;
-           "test_moderate_text_exactly_at_limit"
-           >:: test_moderate_text_exactly_at_limit;
-           "test_moderate_text_just_over_limit"
-           >:: test_moderate_text_just_over_limit;
-           (* Transformer module tests *)
-           "test_is_repetitive" >:: test_is_repetitive;
-           "test_clean_text" >:: test_clean_text;
-           "test_sample_with_temperature" >:: test_sample_with_temperature;
-           (* Tokenizer module tests *)
-           "test_tokenizer_encode_decode" >:: test_tokenizer_encode_decode;
-           "test_tokenizer_multiple_words" >:: test_tokenizer_multiple_words;
-           "test_tokenizer_repeated_words" >:: test_tokenizer_repeated_words;
-           "test_tokenizer_unknown_token" >:: test_tokenizer_unknown_token;
-           (* Model module tests *)
-           "test_model_not_initialized" >:: test_model_not_initialized;
-           "test_model_generate_text_not_initialized"
-           >:: test_model_generate_text_not_initialized;
-           "test_model_generate_text_invalid_length"
-           >:: test_model_generate_text_invalid_length;
-           "test_model_generate_text_with_seed"
-           >:: test_model_generate_text_with_seed;
-           (* Pretrain module tests *)
-           "test_load_dataset" >:: test_load_dataset;
-           "test_create_batches" >:: test_create_batches;
-           "test_cross_entropy_loss" >:: test_cross_entropy_loss;
-         ])
+let matrix_tests =
+  "matrix test suite"
+  >::: [
+         (* Matrix module tests *)
+         "test_matrix_dot" >:: test_matrix_dot;
+         "test_matrix_dot_single" >:: test_matrix_dot_single;
+         "test_matrix_dot_fail" >:: test_matrix_dot_fail;
+         "test_matrix_softmax" >:: test_matrix_softmax;
+         "test_matrix_reshape" >:: test_matrix_reshape;
+         "test_matrix_concat_empty" >:: test_matrix_concat_empty;
+         "test_matrix_concat" >:: test_matrix_concat;
+         "test_matrix_map" >:: test_matrix_map;
+         "test_matrix_one_hot" >:: test_matrix_one_hot;
+         "test_matrix_get_row" >:: test_matrix_get_row;
+         "test_matrix_sum" >:: test_matrix_sum;
+         "test_matrix_elementwise_mul" >:: test_matrix_elementwise_mul;
+         "test_matrix_ones" >:: test_matrix_ones;
+         "test_matrix_random_size" >:: test_matrix_random_size;
+         "test_matrix_random_values" >:: test_matrix_random_values;
+         "test_matrix_get" >:: test_matrix_get;
+         "test_matrix_size_empty" >:: test_matrix_size_empty;
+         "test_matrix_mean" >:: test_matrix_mean;
+         "test_matrix_var_1" >:: test_matrix_var_1;
+         "test_matrix_var_2" >:: test_matrix_var_2;
+         "test_matrix_vec_sum" >:: test_matrix_vec_sum;
+         "test_matrix_add_vec" >:: test_matrix_add_vec;
+         "test_matrix_divide_in_place" >:: test_matrix_divide_in_place;
+         "test_dot_transpose_and_scale" >:: test_dot_transpose_and_scale;
+         "test_mat_dot_vec" >:: test_mat_dot_vec;
+         "test_relu_in_place" >:: test_relu_in_place;
+         "test_add" >:: test_add;
+         "test_scale" >:: test_scale;
+         "test_length" >:: test_length;
+         "test_lacaml_matrix_conversion" >:: test_lacaml_matrix_conversion;
+         "test_lacaml_vector_conversion" >:: test_lacaml_vector_conversion;
+         "test_softmax_empty" >:: test_softmax_empty;
+         "test_softmax_single_value" >:: test_softmax_single_value;
+         "test_relu_in_place_empty" >:: test_relu_in_place_empty;
+         "test_relu_in_place_all_negative" >:: test_relu_in_place_all_negative;
+         "test_concat_empty_matrices" >:: test_concat_empty_matrices;
+         "test_concat_single_matrix" >:: test_concat_single_matrix;
+         "test_add_with_zero_matrix" >:: test_add_with_zero_matrix;
+         "test_elementwise_mul_with_zero_matrix"
+         >:: test_elementwise_mul_with_zero_matrix;
+       ]
+
+let util_tests =
+  "util test suite"
+  >::: [
+         (* Matrix module tests *)
+         (* Util module tests *)
+         "test_time" >:: test_time;
+         "test_log_time" >:: test_log_time;
+         "test_log_time_no_message" >:: test_log_time_no_message;
+         "test_log_time_no_precision" >:: test_log_time_no_precision;
+       ]
+
+let moderation_tests =
+  "moderation test suite"
+  >::: [
+         "test_check_text_length_valid" >:: test_check_text_length_valid;
+         "test_check_text_length_invalid" >:: test_check_text_length_invalid;
+         "test_contains_banned_words_clean" >:: test_contains_banned_words_clean;
+         "test_contains_banned_words_banned"
+         >:: test_contains_banned_words_banned;
+         "test_moderate_text_valid" >:: test_moderate_text_valid;
+         "test_moderate_text_invalid_length"
+         >:: test_moderate_text_invalid_length;
+         "test_moderate_text_invalid_content"
+         >:: test_moderate_text_invalid_content;
+         "test_check_text_length_empty" >:: test_check_text_length_empty;
+         "test_check_text_length_exact" >:: test_check_text_length_exact;
+         "test_check_text_length_unicode" >:: test_check_text_length_unicode;
+         "test_check_text_length_whitespace"
+         >:: test_check_text_length_whitespace;
+         "test_contains_banned_words_empty" >:: test_contains_banned_words_empty;
+         "test_contains_banned_words_whitespace"
+         >:: test_contains_banned_words_whitespace;
+         "test_contains_banned_words_mixed_case"
+         >:: test_contains_banned_words_mixed_case;
+         "test_contains_banned_words_substring"
+         >:: test_contains_banned_words_substring;
+         "test_moderate_text_empty" >:: test_moderate_text_empty;
+         "test_moderate_text_max_length_zero"
+         >:: test_moderate_text_max_length_zero;
+         "test_moderate_text_max_length_negative"
+         >:: test_moderate_text_max_length_negative;
+         "test_moderate_text_multiple_banned_words"
+         >:: test_moderate_text_multiple_banned_words;
+         "test_moderate_text_just_under_limit"
+         >:: test_moderate_text_just_under_limit;
+         "test_moderate_text_exactly_at_limit"
+         >:: test_moderate_text_exactly_at_limit;
+         "test_moderate_text_just_over_limit"
+         >:: test_moderate_text_just_over_limit;
+       ]
+
+let transformer_tests =
+  "transformer test suite"
+  >::: [
+         "test_is_repetitive" >:: test_is_repetitive;
+         "test_clean_text" >:: test_clean_text;
+         "test_sample_with_temperature" >:: test_sample_with_temperature;
+       ]
+
+let tokenizer_tests =
+  "tokenizer test suite"
+  >::: [
+         "test_tokenizer_encode_decode" >:: test_tokenizer_encode_decode;
+         "test_tokenizer_multiple_words" >:: test_tokenizer_multiple_words;
+         "test_tokenizer_repeated_words" >:: test_tokenizer_repeated_words;
+         "test_tokenizer_unknown_token" >:: test_tokenizer_unknown_token;
+       ]
+
+let model_tests =
+  "model test suite"
+  >::: [
+         "test_model_not_initialized" >:: test_model_not_initialized;
+         "test_model_generate_text_not_initialized"
+         >:: test_model_generate_text_not_initialized;
+         "test_model_generate_text_invalid_length"
+         >:: test_model_generate_text_invalid_length;
+         "test_model_generate_text_with_seed"
+         >:: test_model_generate_text_with_seed;
+       ]
+
+let pretrain_tests =
+  "test suite"
+  >::: [
+         "test_load_dataset" >:: test_load_dataset;
+         "test_create_batches" >:: test_create_batches;
+         "test_cross_entropy_loss" >:: test_cross_entropy_loss;
+       ]
+
+let _ = run_test_tt_main matrix_tests
+let _ = run_test_tt_main util_tests
+let _ = run_test_tt_main moderation_tests
+let _ = run_test_tt_main transformer_tests
+let _ = run_test_tt_main tokenizer_tests
+let _ = run_test_tt_main model_tests
+let _ = run_test_tt_main pretrain_tests

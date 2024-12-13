@@ -7,7 +7,6 @@ let time f =
 
 let log_time ?(precision = 3) ?(msg = "") f =
   let elapsed, res = time f in
-  Printf.printf "%s[done in %.*fs]\n%!" msg precision
-    elapsed;
+  Printf.printf "%s[done in %.*fs]\n%!" msg precision elapsed;
   res
 [@@inline]

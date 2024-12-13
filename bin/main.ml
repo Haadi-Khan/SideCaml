@@ -386,7 +386,6 @@ let rec main_loop () =
       display_error "Invalid choice";
       main_loop ()
 
-(** Program Entry Point *)
 let () =
   Random.self_init ();
   clear_screen ();

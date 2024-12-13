@@ -61,10 +61,11 @@ let create_batches texts batch_size =
 
 (* Calculate loss *)
 let cross_entropy_loss predicted target =
-  let log_softmax = Matrix.map Float.log (Matrix.softmax predicted) in
-  let _, predicted_cols = Matrix.size predicted in
-  let target_dist = Matrix.one_hot target predicted_cols in
-  -.Matrix.sum (Matrix.elementwise_mul log_softmax target_dist)
+  let open Matrix in
+  let log_softmax = map Float.log (softmax predicted) in
+  let _, predicted_cols = size predicted in
+  let target_dist = one_hot target predicted_cols in
+  -.sum (elementwise_mul log_softmax target_dist)
 
 (* Calculate gradients with respect to loss *)
 let calculate_gradients loss = Matrix.ones (1, 1) [@@coverage off]

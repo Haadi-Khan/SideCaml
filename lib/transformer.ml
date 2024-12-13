@@ -54,9 +54,11 @@ let load_posts filename =
            comment_count = post |> member "comment_count" |> to_int;
            created_at = post |> member "created_at" |> to_string;
          })
+[@@coverage off]
 
 let prepare_training_data posts =
   List.map posts ~f:(fun post -> post.text) |> String.concat ~sep:" "
+[@@coverage off]
 
 let scaled_dot_product_attention query key value mask =
   let _, key_cols = Matrix.size key in
@@ -169,6 +171,7 @@ let forward_pass config tokens =
   mat_dot_vec
     (Matrix.random config.vocab_size config.embedding_dim)
     last_transformer_output (* vocab_size *)
+[@@coverage off]
 
 let generate_text config () start_token length =
   let temperature = 0.7 in
@@ -185,6 +188,7 @@ let generate_text config () start_token length =
 [@@coverage off]
 
 let init_transformer () =
+  let open Matrix in
   let embedding_dim = 512 in
   let config =
     {
@@ -193,12 +197,12 @@ let init_transformer () =
       num_heads = 8;
       num_layers = 6;
       dropout = 0.1;
-      wk = Matrix.random embedding_dim embedding_dim;
-      wq = Matrix.random embedding_dim embedding_dim;
-      wv = Matrix.random embedding_dim embedding_dim;
-      wo = Matrix.random embedding_dim embedding_dim;
-      w1 = Matrix.random embedding_dim (4 * embedding_dim);
-      w2 = Matrix.random (4 * embedding_dim) embedding_dim;
+      wk = random embedding_dim embedding_dim;
+      wq = random embedding_dim embedding_dim;
+      wv = random embedding_dim embedding_dim;
+      wo = random embedding_dim embedding_dim;
+      w1 = random embedding_dim (4 * embedding_dim);
+      w2 = random (4 * embedding_dim) embedding_dim;
     }
   in
   let posts = load_posts "data/posts.json" in
