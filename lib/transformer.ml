@@ -54,11 +54,9 @@ let load_posts filename =
            comment_count = post |> member "comment_count" |> to_int;
            created_at = post |> member "created_at" |> to_string;
          })
-[@@coverage off]
 
 let prepare_training_data posts =
   List.map posts ~f:(fun post -> post.text) |> String.concat ~sep:" "
-[@@coverage off]
 
 let scaled_dot_product_attention query key value mask =
   let _, key_cols = Matrix.size key in
@@ -81,6 +79,7 @@ let multi_head_attention config query key value mask =
   let q = split_heads query in
   let k = split_heads key in
   let v = split_heads value in
+  (*TODO: is this right?*)
   let sdpa = scaled_dot_product_attention q k v mask in
   let heads = Array.init config.num_heads ~f:(fun _ -> sdpa) in
   concat heads
@@ -90,7 +89,7 @@ let feedforward input w1 w2 =
   let intermediate = Matrix.dot input w1 in
   Matrix.relu_in_place intermediate;
   Matrix.dot intermediate w2
-[@@coverage off]
+[@@inline] [@@coverage off]
 
 let layernorm layer =
   let mean = Matrix.mean layer in
@@ -99,7 +98,7 @@ let layernorm layer =
   let layer_minus_mean = Matrix.mat_add_vec layer (-1.) mean in
   Matrix.divide_in_place layer_minus_mean denominator;
   layer_minus_mean
-[@@coverage off]
+[@@inline] [@@coverage off]
 
 let transformer_block config input =
   let attention = multi_head_attention config input input input None in
@@ -132,10 +131,10 @@ let sample_with_temperature logits temperature =
   let probs = softmax (Matrix.of_array [| scaled_logits |]) in
   sample_from_distribution (Matrix.to_array probs).(0)
 
-let beam_search distribution beam_size max_length =
+let beam_search logits _beam_width _max_length =
   let best_index = ref 0 in
   let best_prob = ref Float.neg_infinity in
-  Array.iteri distribution ~f:(fun i prob ->
+  Array.iteri logits ~f:(fun i prob ->
       if Float.(prob > !best_prob) then (
         best_prob := prob;
         best_index := i));
@@ -151,19 +150,25 @@ let is_repetitive tokens window_size =
     in
     let window2 = Array.sub tokens ~pos:(len - window_size) ~len:window_size in
     Array.equal Int.equal window1 window2
+[@@coverage off]
 
 let forward_pass config tokens =
   let input_embeddings =
-    Matrix.random (Array.length tokens) config.embedding_dim
+    Matrix.random (Array.length tokens)
+      config.embedding_dim (* #tokens x embedding dim *)
   in
-  let transformer_output = transformer_block config input_embeddings in
+  let transformer_output =
+    (* Util.log_time ~msg:"\n\ttransformer_block " (fun () -> transformer_block
+       config input_embeddings (* n x embedding dim *)) *)
+    transformer_block config input_embeddings
+  in
   let last_transformer_output =
     Matrix.(get_row transformer_output (fst (size transformer_output) - 1))
+    (* embedding_dim *)
   in
   mat_dot_vec
     (Matrix.random config.vocab_size config.embedding_dim)
-    last_transformer_output
-[@@coverage off]
+    last_transformer_output (* vocab_size *)
 
 let generate_text config () start_token length =
   let temperature = 0.7 in
@@ -233,8 +238,8 @@ let init_transformer_pretrained checkpoint_path =
   config
 [@@coverage off]
 
-let get_random_first_word text =
-  let ic = In_channel.create text in
+let get_random_first_word path =
+  let ic = In_channel.create path in
   let json = Yojson.Basic.from_channel ic in
   In_channel.close ic;
   let posts = json |> to_list in

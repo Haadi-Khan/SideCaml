@@ -329,12 +329,22 @@ let rec main_loop () =
       main_loop ()
   | "4" ->
       (init () |> function
-       | Error _ -> Printf.printf "Failed to initialize transformer\n"
+       | Error _ ->
+           Printf.printf "Failed to initialize transformer\n";
+           main_loop ()
        | Ok () -> (
            let sample = generate_sample () in
            match sample with
-           | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
-           | Error _ -> Printf.printf "\nFailed to generate post\n"));
+           | Ok text ->
+               clear_screen ();
+               ignore
+                 (ANSITerminal.printf [ Bold; blue ]
+                    "\nTransformer Generated Post:\n\n");
+               draw_fancy_box text;
+               ignore
+                 (ANSITerminal.printf [ cyan ] "\nPress Enter to continue...");
+               ignore (read_line ())
+           | Error _ -> display_error "Failed to generate post"));
       main_loop ()
   | "5" ->
       let rec training_loop () =
