@@ -24,11 +24,18 @@ let headers =
   Header.of_list !headers
 
 let initial_payload =
-  `Assoc
-    [
-      ("school_group_id", `String "73466f01-1f5c-4163-b8f7-c96292eeec67");
-      ("type", `String "recent");
-    ]
+  let ic = open_in "data/initialpayload.txt" in
+  let payload = ref [] in
+  (try
+     while true do
+       let line = input_line ic in
+       match String.split_on_char '|' line with
+       | [ key; value ] ->
+           payload := (String.trim key, `String (String.trim value)) :: !payload
+       | _ -> ()
+     done
+   with End_of_file -> close_in ic);
+  `Assoc !payload
 
 let send_request ?(cursor = None) () =
   let payload =
