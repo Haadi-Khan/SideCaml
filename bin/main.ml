@@ -380,11 +380,12 @@ let () =
               let config = init_transformer () in
               let tc = training_config 32 0.0001 100 "checkpoints" in
               let dataset =
-                try load_dataset "data/wikitext/wikitext-103/wiki.train.tokens"
+                let dataset_path =
+                  "data/wikitext/wikitext-2/wiki.train.tokens"
+                in
+                try load_dataset dataset_path
                 with Sys_error _ ->
-                  Printf.printf
-                    "Path not found: \
-                     data/wikitext/wikitext-103/wiki.train.tokens\n";
+                  Printf.printf "Path not found: %s\n" dataset_path;
                   exit 1
               in
               print_endline "Done reading dataset";

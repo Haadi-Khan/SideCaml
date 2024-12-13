@@ -123,6 +123,7 @@ let train config t dataset =
             (List.zip_exn logits (Array.to_list batch))
         in
         Printf.printf "Batch %d loss: %f\n" (batch_idx + 1) batch_loss;
+        total_loss := !total_loss +. batch_loss;
 
         (* Backward pass & update *)
         let gradients = calculate_gradients batch_loss in
@@ -132,7 +133,7 @@ let train config t dataset =
           Transformer.update_weights !model_params t.learning_rate gradients);
 
     (* Add checkpoint saving at end of each epoch *)
-    if epoch mod 10 = 0 then begin
+    begin
       let checkpoint_file =
         Printf.sprintf "%s/model_epoch_%d.ckpt" t.checkpoint_dir epoch
       in

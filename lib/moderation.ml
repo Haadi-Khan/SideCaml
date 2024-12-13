@@ -3,14 +3,14 @@ type t = {
   reason : string option;
 }
 
-(** Read a list of banned words from data. There's a limited set of bad words from training so I based it off of that*)
+(** Read a list of banned words from data. There's a limited set of bad words
+    from training so I based it off of that*)
 let banned_words =
   let ic = open_in "data/badwords.txt" in
   let rec read_lines acc =
     try
       let line = input_line ic |> String.trim in
-      if line = "" then read_lines acc
-      else read_lines (line :: acc)
+      if line = "" then read_lines acc else read_lines (line :: acc)
     with End_of_file ->
       close_in ic;
       acc
