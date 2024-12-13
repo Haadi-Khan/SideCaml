@@ -1,8 +1,14 @@
 open OUnit2
 open Final_project.Transformer
 open Final_project.Matrix
+open Final_project.Util
+open Final_project.Moderation
+open Final_project.Tokenizer
+open Final_project.Model
 
+(** Test matrices for Matrix module tests *)
 let m1 = of_array [| [| 1.; 2. |]; [| 3.; 4. |] |]
+
 let m2 = of_array [| [| 5.; 6. |]; [| 7.; 8. |] |]
 
 let m3 =
@@ -20,6 +26,7 @@ let m4 =
 
 let v1 = vec_of_array [| 3.; 5.; 7.; 9. |]
 
+(** Helper functions for testing *)
 let print_array arr =
   "\n" ^ String.concat ", " @@ Array.to_list @@ Array.map Float.to_string arr
 
@@ -35,12 +42,10 @@ let eq_test expected_arr x _ =
 let eq_test' expected_arr x _ =
   assert_equal expected_arr (vec_to_array x) ~printer:print_array
 
-(* [is_close' expected actual]*)
 let is_close' rel_tol =
   Array.for_all2 (fun x y ->
       (abs_float (x -. y) /. if x = 0. then 1. else x) <= rel_tol)
 
-(* [is_close expected actual]*)
 let is_close rel_tol = Array.for_all2 (is_close' rel_tol)
 
 let is_close_test' expected_arr x rel_tol _ =
@@ -56,6 +61,12 @@ let is_close_test expected_arr x rel_tol _ =
        (print_matrix x))
     (is_close rel_tol expected_arr (to_array x))
 
+(** Note: fine_tune.mli is intentionally not tested here training neural
+    networks is non-deterministic and the training process is computationally
+    expensive. Therefore the [@@coverage off] annotation has been applied to
+    this module. *)
+
+(** Tests for Matrix module (matrix.mli) *)
 let test_matrix_dot = eq_test [| [| 19.; 22. |]; [| 43.; 50. |] |] (dot m1 m2)
 
 let test_matrix_dot_single =
@@ -176,10 +187,168 @@ let test_matrix_divide_in_place =
      divide_in_place m (-2.);
      m)
 
+let test_dot_transpose_and_scale =
+  eq_test
+    [| [| 10.; 22. |]; [| 22.; 50. |] |]
+    (dot_transpose_and_scale m1 m1 2.)
+
+let test_mat_dot_vec =
+  eq_test' [| 11.; 25. |] (mat_dot_vec m1 (vec_of_array [| 3.; 4. |]))
+
+let test_relu_in_place =
+  eq_test
+    [| [| 1.; 2.; 0. |]; [| 3.; 0.; 4. |] |]
+    (let m = of_array [| [| 1.; 2.; -1. |]; [| 3.; -2.; 4. |] |] in
+     relu_in_place m;
+     m)
+
+let test_add = eq_test [| [| 11.; 14. |]; [| 17.; 20. |] |] (add m1 2. m2)
+let test_scale = eq_test [| [| 2.; 4. |]; [| 6.; 8. |] |] (scale m1 2.)
+let test_length _ = assert_equal 4 (length v1) ~printer:string_of_int
+
+let test_lacaml_matrix_conversion =
+  eq_test
+    [| [| 1.; 2. |]; [| 3.; 4. |] |]
+    (m1 |> to_lacaml_matrix |> of_lacaml_matrix)
+
+let test_lacaml_vector_conversion =
+  eq_test' [| 3.; 5.; 7.; 9. |] (v1 |> to_lacaml_vector |> of_lacaml_vector)
+
+(** Tests for Util module (util.mli) *)
+let test_time _ =
+  let f () =
+    Unix.sleep 1;
+    42
+  in
+  let t, result = time f in
+  assert_equal 42 result ~printer:string_of_int;
+  assert_bool
+    (Printf.sprintf "Expected time around 1.0, got %f" t)
+    (t >= 0.9 && t <= 1.1)
+
+let test_log_time _ =
+  let f () =
+    Unix.sleep 1;
+    "test"
+  in
+  let result = log_time ~precision:2 ~msg:"Testing" f in
+  assert_equal "test" result ~printer:Fun.id
+
+(** Tests for Moderation module (moderation.mli) *)
+let test_check_text_length_valid _ =
+  let result = check_text_length 10 "Hello" in
+  assert_bool "Expected valid text length" (is_valid result)
+
+let test_check_text_length_invalid _ =
+  let result = check_text_length 5 "Too long text" in
+  assert_bool "Expected invalid text length" (not (is_valid result));
+  assert_equal "Text exceeds maximum length of 5 characters"
+    (get_failure_reason result)
+
+let test_contains_banned_words_clean _ =
+  let result = contains_banned_words "Hello world" in
+  assert_bool "Expected text without banned words" (is_valid result)
+
+let test_contains_banned_words_banned _ =
+  let result = contains_banned_words "fuck shit badussy masturbate" in
+  assert_bool "Expected text with banned words" (not (is_valid result));
+  assert_equal "Text contains inappropriate language"
+    (get_failure_reason result)
+
+let test_moderate_text_valid _ =
+  let result = moderate_text ~max_length:20 "Hello world" in
+  assert_bool "Expected valid moderated text" (is_valid result)
+
+let test_moderate_text_invalid_length _ =
+  let result = moderate_text ~max_length:5 "Too long text" in
+  assert_bool "Expected invalid moderated text" (not (is_valid result));
+  assert_equal "Text exceeds maximum length of 5 characters"
+    (get_failure_reason result)
+
+let test_moderate_text_invalid_content _ =
+  let result = moderate_text ~max_length:20 "fuck shit fuckass" in
+  assert_bool "Expected invalid moderated text" (not (is_valid result));
+  assert_equal "Text contains inappropriate language"
+    (get_failure_reason result)
+
+(** Note: Many transformer.mli functions are not tested here because they
+    require a fully initialized model and training data. We test what we can
+    below. *)
+
+(** Tests for Transformer module (transformer.mli) *)
+let test_is_repetitive _ =
+  assert_bool "Should detect repetition"
+    (is_repetitive [| 1; 2; 1; 2; 1; 2 |] 2);
+  assert_bool "Should not detect repetition"
+    (not (is_repetitive [| 1; 2; 3; 4; 5; 6 |] 2))
+
+let test_clean_text _ =
+  assert_equal "hello world!" (clean_text "Hello, World!") ~printer:Fun.id;
+  assert_equal "testing  special  chars!"
+    (clean_text "Testing @#$% Special &*() Chars!")
+    ~printer:Fun.id
+
+let test_sample_with_temperature _ =
+  let distribution = [| 0.1; 0.8; 0.1 |] in
+  let samples =
+    List.init 100 (fun _ -> sample_with_temperature distribution 0.1)
+  in
+  (* With low temperature, should mostly pick index 1 which has highest
+     probability *)
+  assert_bool "Should mostly pick highest probability"
+    (List.length (List.filter (fun x -> x = 1) samples) > 50)
+
+(** Tests for Tokenizer module (tokenizer.mli) *)
+let test_tokenizer_encode_decode _ =
+  let original_text = "hello world" in
+  let tokens = encode original_text in
+  let decoded_text = decode tokens in
+  assert_equal original_text decoded_text ~printer:Fun.id
+
+let test_tokenizer_multiple_words _ =
+  let original_text = "the quick brown fox jumps over the lazy dog" in
+  let tokens = encode original_text in
+  let decoded_text = decode tokens in
+  assert_equal original_text decoded_text ~printer:Fun.id
+
+let test_tokenizer_repeated_words _ =
+  let original_text = "hello hello world world" in
+  let tokens = encode original_text in
+  let decoded_text = decode tokens in
+  assert_equal original_text decoded_text ~printer:Fun.id
+
+let test_tokenizer_unknown_token _ =
+  let tokens = [| 999999 |] in
+  (* Using an ID that shouldn't exist in vocab *)
+  let decoded_text = decode tokens in
+  assert_equal "<UNK>" decoded_text ~printer:Fun.id
+
+(** Tests for Model module (model.mli) *)
+let test_model_not_initialized _ =
+  match generate_sample () with
+  | Error _ -> () (* Expected: error when not initialized *)
+  | Ok _ -> assert_failure "Expected error when model not initialized"
+
+let test_model_generate_text_not_initialized _ =
+  match generate_text 10 with
+  | Error _ -> () (* Expected: error when not initialized *)
+  | Ok _ -> assert_failure "Expected error when model not initialized"
+
+let test_model_generate_text_invalid_length _ =
+  match generate_text (-5) with
+  | Error _ -> () (* Expected: error for negative length *)
+  | Ok _ -> assert_failure "Expected error for negative length"
+
+let test_model_generate_text_with_seed _ =
+  match generate_text ~seed:"test seed" 10 with
+  | Error _ -> () (* Expected: error when not initialized *)
+  | Ok _ -> assert_failure "Expected error when model not initialized"
+
 let () =
   run_test_tt_main
     ("test suite"
     >::: [
+           (* Matrix module tests *)
            "test_matrix_dot" >:: test_matrix_dot;
            "test_matrix_dot_single" >:: test_matrix_dot_single;
            "test_matrix_dot_fail" >:: test_matrix_dot_fail;
@@ -203,4 +372,39 @@ let () =
            "test_matrix_vec_sum" >:: test_matrix_vec_sum;
            "test_matrix_add_vec" >:: test_matrix_add_vec;
            "test_matrix_divide_in_place" >:: test_matrix_divide_in_place;
+           "test_dot_transpose_and_scale" >:: test_dot_transpose_and_scale;
+           "test_mat_dot_vec" >:: test_mat_dot_vec;
+           "test_relu_in_place" >:: test_relu_in_place;
+           "test_add" >:: test_add;
+           "test_scale" >:: test_scale;
+           "test_length" >:: test_length;
+           "test_lacaml_matrix_conversion" >:: test_lacaml_matrix_conversion;
+           "test_lacaml_vector_conversion" >:: test_lacaml_vector_conversion;
+           (* Util module tests *)
+           "test_time" >:: test_time;
+           "test_log_time" >:: test_log_time;
+           (* Moderation module tests *)
+           "test_check_text_length_valid" >:: test_check_text_length_valid;
+           "test_check_text_length_invalid" >:: test_check_text_length_invalid;
+           "test_contains_banned_words_clean"
+           >:: test_contains_banned_words_clean;
+           "test_contains_banned_words_banned"
+           >:: test_contains_banned_words_banned;
+           "test_moderate_text_valid" >:: test_moderate_text_valid;
+           "test_moderate_text_invalid_length"
+           >:: test_moderate_text_invalid_length;
+           "test_moderate_text_invalid_content"
+           >:: test_moderate_text_invalid_content;
+           (* Transformer module tests *)
+           "test_is_repetitive" >:: test_is_repetitive;
+           "test_clean_text" >:: test_clean_text;
+           "test_sample_with_temperature" >:: test_sample_with_temperature;
+           (* Model module tests *)
+           "test_model_not_initialized" >:: test_model_not_initialized;
+           "test_model_generate_text_not_initialized"
+           >:: test_model_generate_text_not_initialized;
+           "test_model_generate_text_invalid_length"
+           >:: test_model_generate_text_invalid_length;
+           "test_model_generate_text_with_seed"
+           >:: test_model_generate_text_with_seed;
          ])

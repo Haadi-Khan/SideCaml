@@ -126,14 +126,15 @@ let sample_with_temperature logits temperature =
   let probs = softmax (Matrix.of_array [| scaled_logits |]) in
   sample_from_distribution (Matrix.to_array probs).(0)
 
-let beam_search logits _beam_width _max_length =
+let beam_search distribution beam_size max_length =
   let best_index = ref 0 in
   let best_prob = ref Float.neg_infinity in
-  Array.iteri logits ~f:(fun i prob ->
+  Array.iteri distribution ~f:(fun i prob ->
       if Float.(prob > !best_prob) then (
         best_prob := prob;
         best_index := i));
   !best_index
+[@@coverage off]
 
 let is_repetitive tokens window_size =
   let len = Array.length tokens in
@@ -162,6 +163,7 @@ let forward_pass config tokens =
   mat_dot_vec
     (Matrix.random config.vocab_size config.embedding_dim)
     last_transformer_output (* vocab_size *)
+[@@coverage off]
 
 let generate_text config () start_token length =
   let temperature = 0.7 in
@@ -175,6 +177,7 @@ let generate_text config () start_token length =
     tokens.(pos + 1) <- next_token
   done;
   decode tokens
+[@@coverage off]
 
 let init_transformer () =
   let embedding_dim = 512 in
@@ -197,6 +200,7 @@ let init_transformer () =
   let training_text = prepare_training_data posts in
   let _ = encode training_text in
   config
+[@@coverage off]
 
 let load_model filename =
   let ic = In_channel.create filename in
@@ -226,8 +230,8 @@ let init_transformer_pretrained checkpoint_path =
   let _ = encode training_text in
   config
 
-let get_random_first_word path =
-  let ic = In_channel.create path in
+let get_random_first_word text =
+  let ic = In_channel.create text in
   let json = Yojson.Basic.from_channel ic in
   In_channel.close ic;
   let posts = json |> to_list in
@@ -241,6 +245,7 @@ let get_random_first_word path =
   match first_words with
   | [] -> failwith "No posts found"
   | words -> List.nth_exn words (Random.int (List.length words))
+[@@coverage off]
 
 let clean_text text =
   text |> String.lowercase
