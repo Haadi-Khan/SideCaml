@@ -6,10 +6,11 @@ type t = {
 (** Read a list of banned words from data. There's a limited set of bad words
     from training so I based it off of that*)
 let banned_words =
-  let ic = open_in "../data/badwords.txt" in
+  let ic = open_in "data/badwords.txt" in
   let rec read_lines acc =
     try
-      let line = input_line ic |> String.trim in
+      let line = input_line ic in
+      let line = String.trim line in
       if line = "" then read_lines acc else read_lines (line :: acc)
     with End_of_file ->
       close_in ic;

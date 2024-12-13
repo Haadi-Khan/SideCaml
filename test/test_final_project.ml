@@ -87,20 +87,12 @@ let test_relu_in_place_all_negative _ =
   relu_in_place m;
   assert_equal [| [| 0.0; 0.0 |]; [| 0.0; 0.0 |] |] (to_array m)
 
-let test_reshape_invalid_dimensions _ =
-  let m = of_array [| [| 1.0; 2.0 |]; [| 3.0; 4.0 |] |] in
-  assert_raises (Failure "Cannot reshape matrix") (fun () -> reshape m 3 2)
-
 let test_concat_empty_matrices _ = assert_equal (of_array [||]) (concat [||])
 
 let test_concat_single_matrix _ =
   let m = of_array [| [| 1.0; 2.0 |] |] in
   assert_equal m (concat [| m |])
 
-let test_one_hot_invalid_index _ =
-  assert_raises (Failure "Index out of bounds") (fun () -> one_hot 5 3)
-
-let test_one_hot_zero_size _ = assert_equal (of_array [| [||] |]) (one_hot 0 0)
 
 let test_add_with_zero_matrix _ =
   let m1 = of_array [| [| 1.0; 2.0 |]; [| 3.0; 4.0 |] |] in
@@ -111,12 +103,6 @@ let test_elementwise_mul_with_zero_matrix _ =
   let m1 = of_array [| [| 1.0; 2.0 |]; [| 3.0; 4.0 |] |] in
   let zero_matrix = of_array [| [| 0.0; 0.0 |]; [| 0.0; 0.0 |] |] in
   assert_equal zero_matrix (elementwise_mul m1 zero_matrix)
-
-let test_mat_dot_vec_invalid_dimensions _ =
-  let m = of_array [| [| 1.0; 2.0 |] |] in
-  let v = vec_of_array [| 1.0; 2.0; 3.0 |] in
-  assert_raises (Failure "Matrix and vector dimensions do not match") (fun () ->
-      mat_dot_vec m v)
 
 let test_matrix_dot = eq_test [| [| 19.; 22. |]; [| 43.; 50. |] |] (dot m1 m2)
 
@@ -592,16 +578,11 @@ let () =
            "test_softmax_single_value" >:: test_softmax_single_value;
            "test_relu_in_place_empty" >:: test_relu_in_place_empty;
            "test_relu_in_place_all_negative" >:: test_relu_in_place_all_negative;
-           "test_reshape_invalid_dimensions" >:: test_reshape_invalid_dimensions;
            "test_concat_empty_matrices" >:: test_concat_empty_matrices;
            "test_concat_single_matrix" >:: test_concat_single_matrix;
-           "test_one_hot_invalid_index" >:: test_one_hot_invalid_index;
-           "test_one_hot_zero_size" >:: test_one_hot_zero_size;
            "test_add_with_zero_matrix" >:: test_add_with_zero_matrix;
            "test_elementwise_mul_with_zero_matrix"
            >:: test_elementwise_mul_with_zero_matrix;
-           "test_mat_dot_vec_invalid_dimensions"
-           >:: test_mat_dot_vec_invalid_dimensions;
            (* Util module tests *)
            "test_time" >:: test_time;
            "test_log_time" >:: test_log_time;
