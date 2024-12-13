@@ -19,8 +19,6 @@ let banned_words =
   let ic = open_in file_path in
   let rec read_lines acc =
     try
-      let line = input_line ic |> String.trim in
-      if line = "" then read_lines acc else read_lines (line :: acc)
       let line = input_line ic in
       let line = String.trim line in
       if line = String.empty then read_lines acc
