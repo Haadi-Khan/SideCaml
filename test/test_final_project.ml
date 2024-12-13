@@ -302,6 +302,112 @@ let test_log_time_no_message _ =
   assert_equal "test" result ~printer:Fun.id
 
 (** Tests for Moderation module (moderation.mli) *)
+(** Tests for Moderation module (moderation.mli) *)
+let test_check_text_length_valid _ =
+  let result = check_text_length 10 "Hello" in
+  assert_bool "Expected valid text length" (is_valid result)
+
+let test_check_text_length_invalid _ =
+  let result = check_text_length 5 "Too long text" in
+  assert_bool "Expected invalid text length" (not (is_valid result));
+  assert_equal "Text exceeds maximum length of 5 characters"
+    (get_failure_reason result)
+
+let test_contains_banned_words_clean _ =
+  let result = contains_banned_words "Hello world" in
+  assert_bool "Expected text without banned words" (is_valid result)
+
+let test_moderate_text_valid _ =
+  let result = moderate_text ~max_length:20 "Hello world" in
+  assert_bool "Expected valid moderated text" (is_valid result)
+
+let test_moderate_text_invalid_length _ =
+  let result = moderate_text ~max_length:5 "Too long text" in
+  assert_bool "Expected invalid moderated text" (not (is_valid result));
+  assert_equal "Text exceeds maximum length of 5 characters"
+    (get_failure_reason result)
+
+let test_check_text_length_empty _ =
+  let result = check_text_length 10 "" in
+  assert_bool "Empty text should be valid" (is_valid result)
+
+let test_check_text_length_exact _ =
+  let result = check_text_length 5 "12345" in
+  assert_bool "Text exactly at max length should be valid" (is_valid result)
+
+let test_check_text_length_unicode _ =
+  let result = check_text_length 10 "🌟🌙✨" in
+  (* Each emoji is 4 bytes *)
+  assert_bool "Unicode characters should be counted by their byte length"
+    (not (is_valid result));
+  assert_equal "Text exceeds maximum length of 10 characters"
+    (get_failure_reason result)
+
+let test_check_text_length_whitespace _ =
+  let result = check_text_length 5 "   " in
+  assert_bool "Whitespace only text should be valid if within length"
+    (is_valid result)
+
+let test_contains_banned_words_empty _ =
+  let result = contains_banned_words "" in
+  assert_bool "Empty text should be valid" (is_valid result)
+
+let test_contains_banned_words_whitespace _ =
+  let result = contains_banned_words "   " in
+  assert_bool "Whitespace only text should be valid" (is_valid result)
+
+let test_contains_banned_words_mixed_case _ =
+  let result = contains_banned_words "BaDwOrD ReAlLyBadWoRd" in
+  assert_bool "Mixed case banned words should be detected"
+    (not (is_valid result));
+  assert_equal "Text contains inappropriate language"
+    (get_failure_reason result)
+
+let test_contains_banned_words_substring _ =
+  let result = contains_banned_words "assignment" in
+  assert_bool "Substrings should not trigger banned words" (is_valid result)
+
+let test_moderate_text_empty _ =
+  let result = moderate_text ~max_length:10 "" in
+  assert_bool "Empty text should be valid" (is_valid result)
+
+let test_moderate_text_max_length_zero _ =
+  let result = moderate_text ~max_length:0 "" in
+  assert_bool "Empty text with zero max length should be valid"
+    (is_valid result)
+
+let test_moderate_text_max_length_negative _ =
+  let result = moderate_text ~max_length:(-1) "test" in
+  assert_bool "Text with negative max length should be invalid"
+    (not (is_valid result));
+  assert_equal "Text exceeds maximum length of -1 characters"
+    (get_failure_reason result)
+
+let test_moderate_text_multiple_banned_words _ =
+  let result = moderate_text ~max_length:50 "badword reallybadword worstword" in
+  assert_bool "Multiple banned words should be detected" (not (is_valid result));
+  assert_equal "Text contains inappropriate language"
+    (get_failure_reason result)
+
+let test_moderate_text_just_under_limit _ =
+  let text = String.make 999 'a' in
+  let result = moderate_text text in
+  assert_bool "Text just under default limit should be valid" (is_valid result)
+
+let test_moderate_text_exactly_at_limit _ =
+  let text = String.make 1000 'a' in
+  let result = moderate_text text in
+  assert_bool "Text exactly at default limit should be valid" (is_valid result)
+
+let test_moderate_text_just_over_limit _ =
+  let text = String.make 1001 'a' in
+  let result = moderate_text text in
+  assert_bool "Text just over default limit should be invalid"
+    (not (is_valid result));
+  assert_equal "Text exceeds maximum length of 1000 characters"
+    (get_failure_reason result)
+
+(** Additional test cases for get_failure_reason *)
 let test_check_text_length_valid _ =
   let result = check_text_length 10 "Hello" in
   assert_bool "Expected valid text length" (is_valid result)
@@ -513,6 +619,32 @@ let () =
            >:: test_moderate_text_invalid_length;
            "test_moderate_text_invalid_content"
            >:: test_moderate_text_invalid_content;
+           "test_check_text_length_empty" >:: test_check_text_length_empty;
+           "test_check_text_length_exact" >:: test_check_text_length_exact;
+           "test_check_text_length_unicode" >:: test_check_text_length_unicode;
+           "test_check_text_length_whitespace"
+           >:: test_check_text_length_whitespace;
+           "test_contains_banned_words_empty"
+           >:: test_contains_banned_words_empty;
+           "test_contains_banned_words_whitespace"
+           >:: test_contains_banned_words_whitespace;
+           "test_contains_banned_words_mixed_case"
+           >:: test_contains_banned_words_mixed_case;
+           "test_contains_banned_words_substring"
+           >:: test_contains_banned_words_substring;
+           "test_moderate_text_empty" >:: test_moderate_text_empty;
+           "test_moderate_text_max_length_zero"
+           >:: test_moderate_text_max_length_zero;
+           "test_moderate_text_max_length_negative"
+           >:: test_moderate_text_max_length_negative;
+           "test_moderate_text_multiple_banned_words"
+           >:: test_moderate_text_multiple_banned_words;
+           "test_moderate_text_just_under_limit"
+           >:: test_moderate_text_just_under_limit;
+           "test_moderate_text_exactly_at_limit"
+           >:: test_moderate_text_exactly_at_limit;
+           "test_moderate_text_just_over_limit"
+           >:: test_moderate_text_just_over_limit;
            (* Transformer module tests *)
            "test_is_repetitive" >:: test_is_repetitive;
            "test_clean_text" >:: test_clean_text;
