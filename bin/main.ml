@@ -10,22 +10,18 @@ open ANSITerminal
 let url = Uri.of_string "https://api.sidechat.lol/v1/posts/home"
 
 let headers =
-  Header.of_list
-    [
-      ("accept", "/");
-      ("content-type", "application/json");
-      ( "authorization",
-        "bearer \
-         eyJhbGciOiJIUzI1NiJ9.OTA3NjRhMDEtZThhYy00NjJlLWE1OWItZmJmMTQ4ZWM1YmZk.2rFdh885edRFF06kRuqsMNo6ms4i743FMRwWuztg32M"
-      );
-      ("app-version", "5.4.15");
-      ( "accept-language",
-        "en-US;q=1.0, ar-US;q=0.9, zh-Hans-US;q=0.8, es-US;q=0.7, ja-US;q=0.6"
-      );
-      ( "user-agent",
-        "sidechat/5.4.15 (com.flowerave.sidechat; build:2; iOS 18.0.1) \
-         Alamofire/5.9.1" );
-    ]
+  let ic = open_in "data/api.txt" in
+  let headers = ref [] in
+  (try
+      while true do
+        let line = input_line ic in
+        match String.split_on_char '|' line with
+        | [key; value] -> 
+            headers := (String.trim key, String.trim value) :: !headers
+        | _ -> ()
+      done
+    with End_of_file -> close_in ic);
+  Header.of_list !headers
 
 let initial_payload =
   `Assoc
