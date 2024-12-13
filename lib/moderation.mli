@@ -1,5 +1,5 @@
 type t
-(** Moderation module for filtering and checking text content *)
+(** Abstract type for moderation result *)
 
 val check_text_length : int -> string -> t
 (** [check_text_length max_length text] checks if text length is within limits *)
