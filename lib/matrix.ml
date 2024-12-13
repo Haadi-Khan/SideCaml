@@ -10,6 +10,7 @@ let mat_dot_vec m v = gemv m v [@@inline]
 let dot_transpose_and_scale a b t = gemm ~transb:`T ~alpha:t a b [@@inline]
 
 let softmax a =
+  if Mat.dim1 a = 0 || Mat.dim2 a = 0 then raise (Failure "Matrix is empty");
   let rows = Mat.dim1 a in
   let cols = Mat.dim2 a in
   let expd = Mat.exp a in

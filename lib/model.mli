@@ -1,4 +1,5 @@
 type t
+(** Abstract type for model error types *)
 
 val generate_sample : unit -> (string, t) result
 (** [generate_sample ()] generates a moderated sample of text using default

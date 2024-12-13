@@ -3,38 +3,40 @@ open Cohttp
 open Cohttp_lwt_unix
 open Yojson.Safe.Util
 open Final_project.Transformer
-open Tokenizer
 open Final_project.Pretrain
 open Final_project.Model
+open ANSITerminal
 
 let url = Uri.of_string "https://api.sidechat.lol/v1/posts/home"
 
 let headers =
-  Header.of_list
-    [
-      ("accept", "/");
-      ("content-type", "application/json");
-      ( "authorization",
-        "bearer \
-         eyJhbGciOiJIUzI1NiJ9.OTA3NjRhMDEtZThhYy00NjJlLWE1OWItZmJmMTQ4ZWM1YmZk.2rFdh885edRFF06kRuqsMNo6ms4i743FMRwWuztg32M"
-      );
-      ("app-version", "5.4.15");
-      ( "accept-language",
-        "en-US;q=1.0, ar-US;q=0.9, zh-Hans-US;q=0.8, es-US;q=0.7, ja-US;q=0.6"
-      );
-      ( "user-agent",
-        "sidechat/5.4.15 (com.flowerave.sidechat; build:2; iOS 18.0.1) \
-         Alamofire/5.9.1" );
-    ]
+  let ic = open_in "data/api.txt" in
+  let headers = ref [] in
+  (try
+     while true do
+       let line = input_line ic in
+       match String.split_on_char '|' line with
+       | [ key; value ] ->
+           headers := (String.trim key, String.trim value) :: !headers
+       | _ -> ()
+     done
+   with End_of_file -> close_in ic);
+  Header.of_list !headers
 
 let initial_payload =
-  `Assoc
-    [
-      ("school_group_id", `String "73466f01-1f5c-4163-b8f7-c96292eeec67");
-      ("type", `String "recent");
-    ]
+  let ic = open_in "data/initialpayload.txt" in
+  let payload = ref [] in
+  (try
+     while true do
+       let line = input_line ic in
+       match String.split_on_char '|' line with
+       | [ key; value ] ->
+           payload := (String.trim key, `String (String.trim value)) :: !payload
+       | _ -> ()
+     done
+   with End_of_file -> close_in ic);
+  `Assoc !payload
 
-(* Function to send a request with an optional cursor field *)
 let send_request ?(cursor = None) () =
   let payload =
     match cursor with
@@ -46,7 +48,6 @@ let send_request ?(cursor = None) () =
   Cohttp_lwt.Body.to_string body >|= fun body_string ->
   Yojson.Safe.from_string body_string
 
-(* Process response and filter posts by criteria *)
 let process_response json =
   let cursor = json |> member "cursor" |> to_string_option in
   let feed_items = json |> member "feed_items" |> to_list in
@@ -84,25 +85,25 @@ let process_response json =
       [] feed_items
   in
   (cursor, List.rev posts)
-(* Reverse posts to make them most recent to least recent *)
 
-(* Display a progress bar *)
-let display_progress current total =
-  let percent = current * 100 / total in
-  Printf.printf "\rProgress: [%3d%%] (%d/%d requests)" percent current total;
-  flush stdout
+let clear_screen () =
+  ANSITerminal.print_string [] "\027[2J";
+  ANSITerminal.print_string [] "\027[H";
+  ()
 
-(* Main loop to fetch data with cursor chaining and accumulate responses *)
-let rec fetch_posts cursor acc count total =
-  if count = 0 then Lwt.return acc
-  else
-    send_request ~cursor () >>= fun response ->
-    let cursor, posts = process_response response in
-    display_progress (total - count + 1) total;
-    match cursor with
-    | Some next_cursor ->
-        fetch_posts (Some next_cursor) (acc @ posts) (count - 1) total
-    | None -> Lwt.return acc
+let display_fetch_progress current total =
+  clear_screen ();
+  ignore (ANSITerminal.printf [ Bold; blue ] "\nFetching Posts Progress:\n\n");
+  let width = 50 in
+  let progress =
+    float_of_int current *. float_of_int width /. float_of_int total
+  in
+  let filled = int_of_float progress in
+  let empty = width - filled in
+  ignore
+    (Printf.printf "[%s%s] %d/%d\n" (String.make filled '#')
+       (String.make empty ' ') current total);
+  ()
 
 let json_to_csv json =
   let posts = json |> to_list in
@@ -119,36 +120,18 @@ let json_to_csv json =
   in
   csv_header ^ String.concat "\n" csv_rows
 
-(* Fetch posts and save results to JSON *)
-let fetch_posts req_num =
-  let result =
-    Lwt_main.run (fetch_posts None [] req_num req_num) |> fun posts ->
-    `List posts |> Yojson.Safe.pretty_to_string
-  in
-  let oc = open_out "posts.json" in
-  output_string oc result;
-  close_out oc;
-  let json = Yojson.Safe.from_string result in
-  let csv = json_to_csv json in
-  let oc = open_out "posts.csv" in
-  output_string oc csv;
-  close_out oc;
-  Printf.printf "\nResults saved to posts.csv\n"
+let rec fetch_posts cursor acc count total =
+  if count = 0 then Lwt.return acc
+  else
+    send_request ~cursor () >>= fun response ->
+    let cursor, posts = process_response response in
+    display_fetch_progress (total - count + 1) total;
+    match cursor with
+    | Some next_cursor ->
+        fetch_posts (Some next_cursor) (acc @ posts) (count - 1) total
+    | None -> Lwt.return acc
 
-(* Randomly select a post from the data stored in data/posts.json *)
-let select_random_post path () =
-  let ic = open_in path in
-  let json = Yojson.Safe.from_channel ic in
-  close_in ic;
-  let posts = json |> to_list in
-  let random_post = List.nth posts (Random.int (List.length posts)) in
-  let text = random_post |> member "text" |> to_string in
-  Printf.printf "Here's a random post: %s\n" text
-
-(* Function to map each word to the 10 most common next words along with the
-   number of occurrences *)
-(* Function to map each word to the 10 most common next words along with the
-   number of occurrences, weighted by upvotes *)
+(** Original post generation functions preserved exactly *)
 let map_word_to_next_words path =
   let ic = open_in path in
   let json = Yojson.Safe.from_channel ic in
@@ -162,7 +145,6 @@ let map_word_to_next_words path =
       | None -> Hashtbl.create 10
     in
     let weight = max 1 vote_total in
-    (* Use vote_total as weight, minimum 1 *)
     let count =
       match Hashtbl.find_opt next_words next_word with
       | Some c -> c + weight
@@ -218,7 +200,6 @@ let get_random_first_word path =
   | [] -> failwith "No posts found"
   | words -> List.nth words (Random.int (List.length words))
 
-(** Generate a new post using [map_word_to_next_words]. *)
 let generate_post_probabilistically path =
   let word_to_top_next_words = map_word_to_next_words path in
   let rec generate_words word acc count =
@@ -259,149 +240,173 @@ let generate_post_probabilistically path =
   let post_words = generate_words start_word [] 20 in
   String.concat " " post_words
 
-(* Run the function and save results to JSON *)
+let draw_fancy_box text =
+  let width = max 60 (String.length text + 4) in
+  let top_border = String.make width '-' in
+  let bottom_border = String.make width '-' in
+  Printf.printf "+%s+\n" top_border;
+  Printf.printf "| %-*s |\n" (width - 2) text;
+  Printf.printf "+%s+\n" bottom_border;
+  ()
+
+let display_menu () =
+  clear_screen ();
+  ignore (ANSITerminal.printf [ Bold; blue ] "\nSidechat Post Generator\n\n");
+  ignore (ANSITerminal.printf [ white ] "1. Fetch new posts\n");
+  ignore (ANSITerminal.printf [ white ] "2. Show random post\n");
+  ignore (ANSITerminal.printf [ white ] "3. Generate post (Probabilistic)\n");
+  ignore (ANSITerminal.printf [ white ] "4. Generate post (Transformer)\n");
+  ignore (ANSITerminal.printf [ white ] "5. Train model\n");
+  ignore (ANSITerminal.printf [ white ] "6. Exit\n\n");
+  ignore (ANSITerminal.printf [ cyan ] "Enter your choice (1-6): ");
+  ()
+
+let display_training_menu () =
+  clear_screen ();
+  ignore (ANSITerminal.printf [ Bold; blue ] "\nTraining Options\n\n");
+  ignore (ANSITerminal.printf [ white ] "1. Pretrain on wiki\n");
+  ignore (ANSITerminal.printf [ white ] "2. Fine-tune pretrained model\n");
+  ignore (ANSITerminal.printf [ white ] "3. Return to main menu\n\n");
+  ignore (ANSITerminal.printf [ cyan ] "Enter your choice (1-3): ");
+  ()
+
+let display_error msg =
+  ignore (ANSITerminal.printf [ Bold; red ] "\nError: %s\n" msg);
+  ignore (Unix.sleep 2);
+  ()
+
+let display_success msg =
+  ignore (ANSITerminal.printf [ Bold; green ] "\nSuccess: %s\n" msg);
+  ignore (Unix.sleep 2);
+  ()
+
+(** Main Program Logic *)
+let rec main_loop () =
+  display_menu ();
+  match read_line () with
+  | "1" ->
+      clear_screen ();
+      ignore
+        (ANSITerminal.printf [ cyan ]
+           "How many requests? (Each yields ~20 posts): ");
+      (match read_int_opt () with
+      | None -> display_error "Invalid input"
+      | Some req_num when req_num <= 0 ->
+          display_error "Number must be positive"
+      | Some req_num ->
+          let result = Lwt_main.run (fetch_posts None [] req_num req_num) in
+          let json_str = `List result |> Yojson.Safe.pretty_to_string in
+          let oc = open_out "posts.json" in
+          output_string oc json_str;
+          close_out oc;
+          let csv = json_to_csv (`List result) in
+          let oc = open_out "posts.csv" in
+          output_string oc csv;
+          close_out oc;
+          display_success "Posts saved to posts.json and posts.csv");
+      main_loop ()
+  | "2" ->
+      (try
+         let ic = open_in "data/posts.json" in
+         let json = Yojson.Safe.from_channel ic in
+         close_in ic;
+         let posts = json |> to_list in
+         let random_post = List.nth posts (Random.int (List.length posts)) in
+         let text = random_post |> member "text" |> to_string in
+         clear_screen ();
+         ignore (ANSITerminal.printf [ Bold; blue ] "\nRandom Post:\n\n");
+         draw_fancy_box text;
+         ignore (ANSITerminal.printf [ cyan ] "\nPress Enter to continue...");
+         ignore (read_line ())
+       with _ -> display_error "Could not read posts file");
+      main_loop ()
+  | "3" ->
+      (try
+         let generated = generate_post_probabilistically "data/posts.json" in
+         clear_screen ();
+         ignore (ANSITerminal.printf [ Bold; blue ] "\nGenerated Post:\n\n");
+         draw_fancy_box generated;
+         ignore (ANSITerminal.printf [ cyan ] "\nPress Enter to continue...");
+         ignore (read_line ())
+       with _ -> display_error "Could not generate post");
+      main_loop ()
+  | "4" ->
+      (init () |> function
+       | Error _ ->
+           Printf.printf "Failed to initialize transformer\n";
+           main_loop ()
+       | Ok () -> (
+           let sample = generate_sample () in
+           match sample with
+           | Ok text ->
+               clear_screen ();
+               ignore
+                 (ANSITerminal.printf [ Bold; blue ]
+                    "\nTransformer Generated Post:\n\n");
+               draw_fancy_box text;
+               ignore
+                 (ANSITerminal.printf [ cyan ] "\nPress Enter to continue...");
+               ignore (read_line ())
+           | Error _ -> display_error "Failed to generate post"));
+      main_loop ()
+  | "5" ->
+      let rec training_loop () =
+        display_training_menu ();
+        match read_line () with
+        | "1" ->
+            let config = init_transformer () in
+            let tc = training_config 32 0.0001 100 "checkpoints" in
+            (try
+               let dataset = load_dataset "data/wiki.train.tokens" in
+               ignore
+                 (ANSITerminal.printf [ Bold; green ]
+                    "\nDataset loaded successfully!\n");
+               train config tc dataset;
+               display_success "Training complete"
+             with Sys_error _ ->
+               display_error "Path not found: data/wiki.train.tokens");
+            training_loop ()
+        | "2" ->
+            (try
+               let config = load_model "checkpoints/model_final.ckpt" in
+               let tc = training_config 16 0.00001 10 "checkpoints_finetuned" in
+               let dataset = load_dataset "data/posts.json" in
+               ignore
+                 (ANSITerminal.printf [ Bold; green ]
+                    "\nDataset loaded successfully!\n");
+               train config tc dataset;
+               display_success "Fine-tuning complete"
+             with Sys_error _ -> display_error "Model checkpoint not found");
+            training_loop ()
+        | "3" -> main_loop ()
+        | _ ->
+            display_error "Invalid choice";
+            training_loop ()
+      in
+      training_loop ()
+  | "6" -> exit 0
+  | _ ->
+      display_error "Invalid choice";
+      main_loop ()
+
 let () =
   Random.self_init ();
-  Printf.printf
-    "This program fetches posts from Sidechat API and saves them to a JSON \
-     file and a CSV file.\n\
-     An example json file is already in data/posts.json.\n\
-     The fetched post data are written to posts.csv and posts.json.\n\n\
-     Do you want to fetch new posts (y/N) or use the existing data/posts.json? ";
-  match read_line () with
-  | "y" | "Y" -> (
-      Printf.printf
-        "How many requests do you want to make? Each request yields ~20 posts. ";
-      match read_int_opt () with
-      | None -> print_endline "Failed to parse input. Exiting"
-      | Some req_num -> (
-          fetch_posts req_num;
-          Printf.printf
-            "\n\
-             Do you want to (1) see a random post, (2) tokenize a random post, \
-             (3) generate a post, (4) generate using transformer, or (5) \
-             pretrain the model? ";
-          match read_int_opt () with
-          | Some 1 -> select_random_post "posts.json" ()
-          | Some 2 ->
-              let tokenizer = Tokenizer.load_and_train_tokenizer "posts.json" in
-              let text, tokens =
-                Tokenizer.tokenize_random_post tokenizer "posts.json"
-              in
-              Printf.printf "\nOriginal post:\n%s\n\n" text;
-              Printf.printf "Tokens:\n[";
-              List.iter (fun token -> Printf.printf "%d; " token) tokens;
-              Printf.printf "]\n\n";
-              let decoded = Tokenizer.decode tokenizer tokens in
-              Printf.printf "Decoded back to text:\n%s\n" decoded
-          | Some 3 ->
-              let generated = generate_post_probabilistically "posts.json" in
-              Printf.printf "\nGenerated post:\n%s\n" generated
-          | Some 4 -> (
-              init () |> function
-              | Error _ -> Printf.printf "Failed to initialize transformer\n"
-              | Ok () -> (
-                  let sample = generate_sample () in
-                  match sample with
-                  | Ok text ->
-                      Printf.printf "\nTransformer generated post:\n%s\n" text
-                  | Error _ -> Printf.printf "\nFailed to generate post\n"))
-          | Some 5 -> (
-              Printf.printf
-                "Choose: (1) Pretrain on wiki, (2) Fine-tune pretrained model \
-                 on posts? ";
-              match read_int_opt () with
-              | Some 1 ->
-                  let config = init_transformer () in
-                  let tc = training_config 32 0.0001 100 "checkpoints" in
-                  let dataset =
-                    try load_dataset "data/wiki.train.tokens"
-                    with Sys_error _ ->
-                      Printf.printf "Path not found: data/wiki.train.tokens\n";
-                      exit 1
-                  in
-                  print_endline "Done reading dataset";
-                  train config tc dataset
-              | Some 2 -> (
-                  try
-                    let config = load_model "checkpoints/model_final.ckpt" in
-                    let tc =
-                      training_config 16 0.00001 10 "checkpoints_finetuned"
-                    in
-                    let dataset = load_dataset "data/posts.json" in
-                    print_endline "Done reading dataset";
-                    train config tc dataset;
-                    print_endline "Fine-tuning complete"
-                  with Sys_error _ ->
-                    print_endline "Model checkpoint not found")
-              | _ -> print_endline "Invalid choice")
-          | _ ->
-              Printf.printf "Invalid choice, showing random post:\n";
-              select_random_post "posts.json" ()))
-  | _ -> (
-      Printf.printf "No new posts fetched (using data/posts.json).\n";
-      Printf.printf
-        "Do you want to (1) see a random post, (2) tokenize a random post, (3) \
-         generate a post, (4) generate using transformer, or (5) pretrain the \
-         model? ";
-      match read_int_opt () with
-      | Some 1 -> select_random_post "data/posts.json" ()
-      | Some 2 ->
-          let tokenizer =
-            Tokenizer.load_and_train_tokenizer "data/posts.json"
-          in
-          let text, tokens =
-            Tokenizer.tokenize_random_post tokenizer "data/posts.json"
-          in
-          Printf.printf "\nOriginal post:\n%s\n\n" text;
-          Printf.printf "Tokens:\n[";
-          List.iter (fun token -> Printf.printf "%d; " token) tokens;
-          Printf.printf "]\n\n";
-          let decoded = Tokenizer.decode tokenizer tokens in
-          Printf.printf "Decoded back to text:\n%s\n" decoded
-      | Some 3 ->
-          let generated = generate_post_probabilistically "data/posts.json" in
-          Printf.printf "\nGenerated post:\n%s\n" generated
-      | Some 4 -> (
-          init () |> function
-          | Error _ -> Printf.printf "Failed to initialize transformer\n"
-          | Ok () -> (
-              let sample = generate_sample () in
-              match sample with
-              | Ok text ->
-                  Printf.printf "\nTransformer generated post:\n%s\n" text
-              | Error _ -> Printf.printf "\nFailed to generate post\n"))
-      | Some 5 -> (
-          Printf.printf
-            "Choose: (1) Pretrain on wiki, (2) Fine-tune pretrained model on \
-             posts? ";
-          match read_int_opt () with
-          | Some 1 ->
-              let config = init_transformer () in
-              let tc = training_config 32 0.0001 100 "checkpoints" in
-              let dataset =
-                let dataset_path =
-                  "data/wikitext/wikitext-2/wiki.train.tokens"
-                in
-                try load_dataset dataset_path
-                with Sys_error _ ->
-                  Printf.printf "Path not found: %s\n" dataset_path;
-                  exit 1
-              in
-              print_endline "Done reading dataset";
-              train config tc dataset
-          | Some 2 -> (
-              try
-                let config = load_model "checkpoints/model_final.ckpt" in
-                let tc =
-                  training_config 16 0.00001 10 "checkpoints_finetuned"
-                in
-                let dataset = load_dataset "data/posts.json" in
-                print_endline "Done reading dataset";
-                train config tc dataset;
-                print_endline "Fine-tuning complete"
-              with Sys_error _ -> print_endline "Invalid choice")
-          | _ -> print_endline "Invalid choice")
-      | _ ->
-          Printf.printf "Invalid choice, showing random post:\n";
-          select_random_post "data/posts.json" ())
+  clear_screen ();
+  ignore
+    (ANSITerminal.printf [ Bold; blue ]
+       "\nWelcome to Sidechat Post Generator!\n");
+  ignore
+    (ANSITerminal.printf [ white ]
+       "\n\
+        This program can fetch posts from Sidechat API and save them to JSON \
+        and CSV files.\n");
+  ignore
+    (ANSITerminal.printf [ white ]
+       "An example json file is already in data/posts.json.\n");
+  ignore
+    (ANSITerminal.printf [ white ]
+       "New fetched posts will be written to posts.csv and posts.json in the \
+        current directory.\n\n");
+  ignore (ANSITerminal.printf [ cyan ] "Press Enter to continue...");
+  ignore (read_line ());
+  main_loop ()

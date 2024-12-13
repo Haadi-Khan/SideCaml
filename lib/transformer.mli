@@ -1,5 +1,8 @@
 type t
+(** The type of a transformer model. *)
+
 type post
+(** A post is a JSON object with a "text" field. *)
 
 val load_posts : string -> post list
 (** [load_posts filename] loads a list of posts from a JSON file. *)

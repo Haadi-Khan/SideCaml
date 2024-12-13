@@ -1,0 +1,6 @@
+accept|/
+content-type|application/json
+authorization|bearer eyJhbGciOiJIUzI1NiJ9.OTA3NjRhMDEtZThhYy00NjJlLWE1OWItZmJmMTQ4ZWM1YmZk.2rFdh885edRFF06kRuqsMNo6ms4i743FMRwWuztg32M
+app-version|5.4.15
+accept-language|en-US;q=1.0, ar-US;q=0.9, zh-Hans-US;q=0.8, es-US;q=0.7, ja-US;q=0.6
+user-agent|sidechat/5.4.15 (com.flowerave.sidechat; build:2; iOS 18.0.1) Alamofire/5.9.1

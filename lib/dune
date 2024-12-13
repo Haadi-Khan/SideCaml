@@ -1,7 +1,8 @@
 (library
  (name final_project)
- (libraries core yojson lacaml)
+ (libraries core yojson lacaml str)
  (preprocess
   (pps ppx_jane))
  (instrumentation
-  (backend bisect_ppx)))
+  (backend bisect_ppx))
+  )
