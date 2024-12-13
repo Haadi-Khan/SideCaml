@@ -13,14 +13,14 @@ let headers =
   let ic = open_in "data/api.txt" in
   let headers = ref [] in
   (try
-      while true do
-        let line = input_line ic in
-        match String.split_on_char '|' line with
-        | [key; value] -> 
-            headers := (String.trim key, String.trim value) :: !headers
-        | _ -> ()
-      done
-    with End_of_file -> close_in ic);
+     while true do
+       let line = input_line ic in
+       match String.split_on_char '|' line with
+       | [ key; value ] ->
+           headers := (String.trim key, String.trim value) :: !headers
+       | _ -> ()
+     done
+   with End_of_file -> close_in ic);
   Header.of_list !headers
 
 let initial_payload =

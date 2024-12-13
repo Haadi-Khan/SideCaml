@@ -8,12 +8,12 @@ type t = {
 let banned_words =
   let current_dir = Sys.getcwd () in
   let is_test =
-    let open Str in
-    split (regexp "/") current_dir |> List.rev |> List.hd |> ( = ) "test"
+    Str.split (Str.regexp "/") current_dir
+    |> List.rev |> List.hd |> ( = ) "test"
   in
-  let file_path = "data/badwords.txt" in
-  let file_path_prefix = if is_test then "../" else String.empty in
-  let file_path = file_path_prefix ^ file_path in
+  let file_path =
+    if is_test then "../data/badwords.txt" else "data/badwords.txt"
+  in
 
   let ic = open_in file_path in
   let rec read_lines acc =
@@ -34,8 +34,8 @@ let check_text_length max_length text =
       is_valid = false;
       reason =
         Some
-          (Printf.sprintf
-             "(Error!) Text exceeds maximum length of %d characters" max_length);
+          (Printf.sprintf "Text exceeds maximum length of %d characters"
+             max_length);
     }
   else { is_valid = true; reason = None }
 
