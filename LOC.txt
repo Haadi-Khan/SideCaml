@@ -1,0 +1,13 @@
+I would recommend against running `cloc .` because it will index all the files
+in the data section, which might take a while. We wrote all of our code in
+bin, lib, and test so using cloc on those folders is how we measured LOC.
+
+$ cloc bin lib test
+github.com/AlDanial/cloc v 2.02  T=0.02 s (1044.5 files/s, 119242.1 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+OCaml                           18            285            168           1602
+-------------------------------------------------------------------------------
+SUM:                            18            285            168           1602
+-------------------------------------------------------------------------------
