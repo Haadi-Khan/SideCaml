@@ -1,13 +1,7 @@
-open Transformer
-open Pretrain
-
-type t = {
-  batch_size : int;
-  learning_rate : float;
-  max_epochs : int;
-  checkpoint_dir : string;
-}
-
-type post = Transformer.post
+type t
+type post
 
 val fine_tune : Transformer.t -> Pretrain.t -> unit
+(**[fine_tune config training_config] trains a Transformer model on a set of
+   posts. [config] is the configuration for the Transformer model, and
+   [training_config] is the configuration for training. *)

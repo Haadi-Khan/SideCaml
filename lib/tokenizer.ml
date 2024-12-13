@@ -1,7 +1,5 @@
 open Core
 
-type t = unit
-
 let vocab = Hashtbl.create (module String)
 let reverse_vocab = Hashtbl.create (module Int)
 let next_id = ref 0
