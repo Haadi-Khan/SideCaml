@@ -72,6 +72,11 @@ let is_close_test expected_arr x rel_tol _ =
 let test_softmax_empty _ =
   assert_raises (Failure "Matrix is empty") (fun () -> softmax (of_array [||]))
 
+let test_matrix_dot_identity _ =
+  let m = of_array [| [| 1.; 2. |]; [| 3.; 4. |] |] in
+  let identity = of_array [| [| 1.; 0. |]; [| 0.; 1. |] |] in
+  eq_test (to_array m) (dot m identity)
+
 let test_softmax_single_value _ =
   let m = of_array [| [| 5.0 |] |] in
   let result = softmax m in
@@ -92,7 +97,6 @@ let test_concat_empty_matrices _ = assert_equal (of_array [||]) (concat [||])
 let test_concat_single_matrix _ =
   let m = of_array [| [| 1.0; 2.0 |] |] in
   assert_equal m (concat [| m |])
-
 
 let test_add_with_zero_matrix _ =
   let m1 = of_array [| [| 1.0; 2.0 |]; [| 3.0; 4.0 |] |] in
@@ -288,7 +292,6 @@ let test_log_time_no_message _ =
   assert_equal "test" result ~printer:Fun.id
 
 (** Tests for Moderation module (moderation.mli) *)
-(** Tests for Moderation module (moderation.mli) *)
 let test_check_text_length_valid _ =
   let result = check_text_length 10 "Hello" in
   assert_bool "Expected valid text length" (is_valid result)
@@ -425,7 +428,7 @@ let test_moderate_text_invalid_length _ =
     (get_failure_reason result)
 
 let test_moderate_text_invalid_content _ =
-  let result = moderate_text ~max_length:20 "fuck shit fuckass" in
+  let result = moderate_text ~max_length:20 "badword baddestword" in
   assert_bool "Expected invalid moderated text" (not (is_valid result));
   assert_equal "Text contains inappropriate language"
     (get_failure_reason result)
