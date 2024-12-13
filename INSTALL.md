@@ -3,4 +3,4 @@ As of MS3, the only requirements needed to install and build our system are to e
 
 To do so, run the following command:
 
-`opam install Cohttp cohttp-lwt-unix lwt_ssl Lwt Yojson ounit2 core ansiterminal lacaml`
+`opam install Cohttp cohttp-lwt-unix lwt_ssl bisect_ppx Lwt Yojson ounit2 core ansiterminal lacaml`
