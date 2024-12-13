@@ -68,15 +68,6 @@ let test_matrix_dot_fail _ =
     (Failure "Lacaml.D.gemm: inner dimensions of matrices do not match (1,2)")
     (fun () -> dot (of_array [| [| 0.0 |] |]) m1)
 
-(* let test_matrix_transpose = eq_test [| [| 1.; 3. |]; [| 2.; 4. |] |]
-   (transpose m1) *)
-
-(* let test_matrix_scale = eq_test [| [| 3.; 6. |]; [| 9.; 12. |] |] (scale m1
-   3.0) *)
-
-let test_matrix_map2 =
-  eq_test [| [| -4.; -4. |]; [| -4.; -4. |] |] (map2 ( -. ) m1 m2)
-
 let test_matrix_softmax =
   is_close_test
     [|
@@ -192,9 +183,6 @@ let () =
            "test_matrix_dot" >:: test_matrix_dot;
            "test_matrix_dot_single" >:: test_matrix_dot_single;
            "test_matrix_dot_fail" >:: test_matrix_dot_fail;
-           (* "test_matrix_transpose" >:: test_matrix_transpose; *)
-           (* "test_matrix_scale" >:: test_matrix_scale; *)
-           "test_matrix_map2" >:: test_matrix_map2;
            "test_matrix_softmax" >:: test_matrix_softmax;
            "test_matrix_reshape" >:: test_matrix_reshape;
            "test_matrix_concat_empty" >:: test_matrix_concat_empty;
