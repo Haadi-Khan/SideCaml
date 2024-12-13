@@ -327,15 +327,14 @@ let rec main_loop () =
          ignore (read_line ())
        with _ -> display_error "Could not generate post");
       main_loop ()
-  | "4" ->
-      (init () |> function
-       | Error _ -> Printf.printf "Failed to initialize transformer\n"
-       | Ok () -> (
-           let sample = generate_sample () in
-           match sample with
-           | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
-           | Error _ -> Printf.printf "\nFailed to generate post\n"));
-      main_loop ()
+  | "4" -> (
+      init () |> function
+      | Error _ -> Printf.printf "Failed to initialize transformer\n"
+      | Ok () -> (
+          let sample = generate_sample () in
+          match sample with
+          | Ok text -> Printf.printf "\nTransformer generated post:\n%s\n" text
+          | Error _ -> Printf.printf "\nFailed to generate post\n"))
   | "5" ->
       let rec training_loop () =
         display_training_menu ();

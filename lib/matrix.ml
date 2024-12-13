@@ -5,17 +5,8 @@ open Lacaml.D
 type mat = Mat.t
 type vec = Vec.t
 
-let size m = (Mat.dim1 m, Mat.dim2 m)
 let dot a b = gemm a b [@@inline]
-
-let mat_dot_vec m v =
-  let m_rows, m_cols = size m in
-  let v_length = Vec.dim v in
-  if m_cols <> v_length then
-    raise (Failure "Matrix and vector dimensions do not match");
-  gemv m v
-[@@inline]
-
+let mat_dot_vec m v = gemv m v [@@inline]
 let dot_transpose_and_scale a b t = gemm ~transb:`T ~alpha:t a b [@@inline]
 
 let softmax a =
@@ -31,8 +22,6 @@ let relu_in_place a = ignore @@ Mat.relu a ~b:a
 let reshape a rows cols =
   let arr = Mat.to_array a in
   let old_cols = Mat.dim2 a in
-  if Array.length arr * old_cols <> rows * cols then
-    raise (Failure "Cannot reshape matrix");
   Mat.init_cols rows cols (fun row col ->
       let i = ((row - 1) * cols) + col - 1 in
       arr.(i / old_cols).(i mod old_cols))
@@ -47,13 +36,9 @@ let vec_to_array = Vec.to_array
 let vec_of_array = Vec.of_array
 
 let one_hot index size =
-  if size <= 0 then Mat.of_array [| [||] |]
-    (* Return an empty matrix if size is zero *)
-  else if index < 0 || index >= size then raise (Failure "Index out of bounds")
-  else
-    let v = Array.create ~len:size 0. in
-    v.(index) <- 1.;
-    Mat.of_array [| v |]
+  let v = Array.create ~len:size 0. in
+  v.(index) <- 1.;
+  Mat.of_array [| v |]
 
 let get_row matrix i = Mat.copy_row matrix (i + 1)
 let sum matrix = Mat.sum matrix
@@ -61,6 +46,7 @@ let elementwise_mul m1 m2 = Mat.mul m1 m2 [@@inline]
 let ones (rows, cols) = Mat.make rows cols 1.
 let random rows cols = Mat.random rows cols
 let get a i j = (Vec.to_array (Mat.to_col_vecs a).(j)).(i)
+let size m = (Mat.dim1 m, Mat.dim2 m)
 
 let add m1 alpha m2 =
   let rows, cols = size m1 in
