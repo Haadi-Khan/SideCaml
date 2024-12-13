@@ -3,7 +3,6 @@ open Cohttp
 open Cohttp_lwt_unix
 open Yojson.Safe.Util
 open Final_project.Transformer
-open Tokenizer
 open Final_project.Pretrain
 open Final_project.Model
 
@@ -278,26 +277,15 @@ let () =
           fetch_posts req_num;
           Printf.printf
             "\n\
-             Do you want to (1) see a random post, (2) tokenize a random post, \
-             (3) generate a post, (4) generate using transformer, or (5) \
+             Do you want to (1) see a random post, \
+             (2) generate a post, (3) generate using transformer, or (4) \
              pretrain the model? ";
           match read_int_opt () with
           | Some 1 -> select_random_post "posts.json" ()
           | Some 2 ->
-              let tokenizer = Tokenizer.load_and_train_tokenizer "posts.json" in
-              let text, tokens =
-                Tokenizer.tokenize_random_post tokenizer "posts.json"
-              in
-              Printf.printf "\nOriginal post:\n%s\n\n" text;
-              Printf.printf "Tokens:\n[";
-              List.iter (fun token -> Printf.printf "%d; " token) tokens;
-              Printf.printf "]\n\n";
-              let decoded = Tokenizer.decode tokenizer tokens in
-              Printf.printf "Decoded back to text:\n%s\n" decoded
-          | Some 3 ->
               let generated = generate_post_probabilistically "posts.json" in
               Printf.printf "\nGenerated post:\n%s\n" generated
-          | Some 4 -> (
+          | Some 3 -> (
               init () |> function
               | Error _ -> Printf.printf "Failed to initialize transformer\n"
               | Ok () -> (
@@ -306,7 +294,7 @@ let () =
                   | Ok text ->
                       Printf.printf "\nTransformer generated post:\n%s\n" text
                   | Error _ -> Printf.printf "\nFailed to generate post\n"))
-          | Some 5 -> (
+          | Some 4 -> (
               Printf.printf
                 "Choose: (1) Pretrain on wiki, (2) Fine-tune pretrained model \
                  on posts? ";
@@ -341,28 +329,15 @@ let () =
   | _ -> (
       Printf.printf "No new posts fetched (using data/posts.json).\n";
       Printf.printf
-        "Do you want to (1) see a random post, (2) tokenize a random post, (3) \
-         generate a post, (4) generate using transformer, or (5) pretrain the \
+        "Do you want to (1) see a random post, (2) \
+         generate a post, (3) generate using transformer, or (4) pretrain the \
          model? ";
       match read_int_opt () with
       | Some 1 -> select_random_post "data/posts.json" ()
       | Some 2 ->
-          let tokenizer =
-            Tokenizer.load_and_train_tokenizer "data/posts.json"
-          in
-          let text, tokens =
-            Tokenizer.tokenize_random_post tokenizer "data/posts.json"
-          in
-          Printf.printf "\nOriginal post:\n%s\n\n" text;
-          Printf.printf "Tokens:\n[";
-          List.iter (fun token -> Printf.printf "%d; " token) tokens;
-          Printf.printf "]\n\n";
-          let decoded = Tokenizer.decode tokenizer tokens in
-          Printf.printf "Decoded back to text:\n%s\n" decoded
-      | Some 3 ->
           let generated = generate_post_probabilistically "data/posts.json" in
           Printf.printf "\nGenerated post:\n%s\n" generated
-      | Some 4 -> (
+      | Some 3 -> (
           init () |> function
           | Error _ -> Printf.printf "Failed to initialize transformer\n"
           | Ok () -> (
@@ -371,7 +346,7 @@ let () =
               | Ok text ->
                   Printf.printf "\nTransformer generated post:\n%s\n" text
               | Error _ -> Printf.printf "\nFailed to generate post\n"))
-      | Some 5 -> (
+      | Some 4 -> (
           Printf.printf
             "Choose: (1) Pretrain on wiki, (2) Fine-tune pretrained model on \
              posts? ";
