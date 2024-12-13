@@ -25,7 +25,6 @@ let rec generate_text_internal config ~max_length ~seed length =
   let moderation_result = moderate_text ~max_length generated in
   if moderation_result |> is_valid then Ok generated
   else
-    (* let reason = get_failure_reason moderation_result in *)
     generate_text_internal config ~max_length ~seed length
 
 let generate_text ?(max_length = 1000) ?(seed = "") length =
